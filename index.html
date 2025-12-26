@@ -1,42 +1,487 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome</title>
+    <title>스틸어 브레인롯 시뮬레이션 FINAL V13</title>
     <style>
+        :root {
+            --primary: #ffeb3b;
+            --bg-color: #1a1a1a;
+            --panel-color: #2d2d2d;
+            --text-color: #ffffff;
+            --common-border: #4caf50; /* 초록 */
+            --rare-border: #2979ff;   /* 파랑 */
+            --epic-border: #9c27b0;   /* 보라 */
+            --legendary-border: #ffd700; /* 노랑 */
+            --mythic-border: #ff0000; /* 빨강 */
+        }
+
+        [data-theme="white"] { --bg-color: #f0f0f0; --panel-color: #ffffff; --text-color: #333333; --primary: #ff9800; }
+        [data-theme="red"] { --bg-color: #b71c1c; --panel-color: #c62828; --text-color: #ffffff; }
+        [data-theme="blue"] { --bg-color: #0d47a1; --panel-color: #1565c0; --text-color: #ffffff; }
+
         body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #000;
+            color: var(--text-color);
+            margin: 0; padding: 0;
+            user-select: none; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
             height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
         }
-        .container {
-            text-align: center;
-            padding: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
+
+        #game-container {
+            width: 100%; max-width: 450px; height: 95vh;
+            background-color: var(--bg-color);
+            border: 2px solid #444; border-radius: 15px;
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
-        h1 {
-            font-size: 3em;
-            margin: 0;
-            animation: fadeIn 1s;
+
+        header {
+            background: rgba(0,0,0,0.3); padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        #game-title { font-size: 14px; font-weight: bold; opacity: 0.9; }
+        .top-menu { display: flex; gap: 5px; }
+        .money-display { font-size: 24px; font-weight: bold; color: var(--primary); text-align: center; margin-top:5px; }
+        .eps-display { font-size: 12px; opacity: 0.7; text-align: center; }
+        .icon-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-color); border-radius: 5px; width: 32px; height: 32px;
+            font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
+
+        #lobby {
+            flex: 1; overflow-y: auto; padding: 20px 0;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .shop-row {
+            display: flex; gap: 10px; margin-bottom: 20px;
+            justify-content: center; flex-wrap: wrap; width: 100%;
+        }
+
+        .pack-card {
+            width: 130px; height: 180px;
+            border-radius: 10px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer;
+            border: 3px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative; transition: transform 0.1s; margin-bottom: 10px;
+        }
+        .pack-card:active { transform: scale(0.95); }
+
+        .pack-normal { background: linear-gradient(135deg, #6e8efb, #a777e3); }
+        .pack-rare { background: linear-gradient(135deg, #f44336, #ff9800); border-color: #ffd700; }
+        .pack-epic { background: linear-gradient(135deg, #7b1fa2, #e91e63); border-color: #e040fb; }
+        .pack-legendary { background: linear-gradient(135deg, #fdd835, #f57f17); border-color: #ffff00; box-shadow: 0 0 15px #ffd700; }
+        .pack-mythic { background: linear-gradient(135deg, #d32f2f, #b71c1c); border-color: #ff0000; box-shadow: 0 0 20px #ff0000; }
+        
+        /* 갓 팩 디자인 (무지개 배경) */
+        .pack-god { 
+            background: #000; 
+            border: 4px solid transparent;
+            background-image: linear-gradient(#1a1a1a, #1a1a1a), linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+            background-origin: border-box; background-clip: content-box, border-box;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+            animation: rainbowPack 3s linear infinite;
+        }
+        @keyframes rainbowPack {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .pack-title { font-size: 16px; font-weight: bold; color: white; text-shadow: 0 1px 2px black; margin-bottom: 5px; }
+        .pack-cost { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 15px; margin-top: 10px; color: #ffeb3b; font-size: 14px; }
+
+        .auto-toggle {
+            background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+        }
+        .auto-active { background: var(--common-border); color: white; }
+
+        #my-base {
+            height: 25%; background-color: var(--panel-color);
+            border-top: 1px solid rgba(255,255,255,0.1); padding: 10px;
+        }
+        .base-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .slot { aspect-ratio: 1; background: rgba(0,0,0,0.2); border-radius: 5px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+
+        .item-img { 
+            width: 100%; height: 100%; object-fit: contain; 
+            border-radius: 5px; background-color: rgba(0,0,0,0.2); box-sizing: border-box; 
+        }
+        
+        /* 등급별 테두리 */
+        .rarity-1 { border: 2px solid var(--common-border); } 
+        .rarity-2 { border: 2px solid var(--rare-border); box-shadow: 0 0 5px var(--rare-border); } 
+        .rarity-3 { border: 3px solid var(--epic-border); box-shadow: 0 0 10px var(--epic-border); } 
+        .rarity-4 { border: 3px solid var(--legendary-border); box-shadow: 0 0 15px var(--legendary-border), inset 0 0 10px rgba(255, 215, 0, 0.5); } 
+        .rarity-5 { border: 3px solid var(--mythic-border); box-shadow: 0 0 20px var(--mythic-border), inset 0 0 15px rgba(255, 0, 0, 0.5); animation: pulseRed 1s infinite; }
+        .rarity-6 { /* 갓 등급 (무지개) */
+            border: 4px solid transparent;
+            animation: rainbowBorder 2s linear infinite;
+            box-shadow: 0 0 15px rgba(255,255,255,0.8);
+        }
+
+        @keyframes rainbowBorder {
+            0% { border-color: red; box-shadow: 0 0 15px red; }
+            15% { border-color: orange; box-shadow: 0 0 15px orange; }
+            30% { border-color: yellow; box-shadow: 0 0 15px yellow; }
+            45% { border-color: green; box-shadow: 0 0 15px green; }
+            60% { border-color: blue; box-shadow: 0 0 15px blue; }
+            75% { border-color: indigo; box-shadow: 0 0 15px indigo; }
+            100% { border-color: violet; box-shadow: 0 0 15px violet; }
+        }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 10px #ff0000; } 50% { box-shadow: 0 0 25px #ff0000; } 100% { box-shadow: 0 0 10px #ff0000; } }
+
+        /* 진화 이펙트 (레벨) */
+        .tier-gold { border-color: #ffd700 !important; }
+        .tier-diamond { border-color: #00e5ff !important; animation: sparkle 2s infinite; }
+        .tier-rainbow { border-color: white !important; animation: rainbowBorder 1s infinite; }
+        
+        .bottom-nav { display: flex; justify-content: space-around; padding: 10px; background: #333; }
+        .nav-btn { background: none; border: none; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 12px; }
+
+        .modal { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom:10px; border-bottom:1px solid #555; }
+        .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+
+        .inventory-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; overflow-y: auto; align-content: start; height: 100%; }
+        .inv-item { background: rgba(255,255,255,0.05); border-radius: 5px; padding: 5px; display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative; height: 95px; justify-content: space-between; }
+        .inv-item img { width: 100%; height: 60px; object-fit: contain; margin-bottom: 2px; }
+        
+        .collection-item { opacity: 1; transition: 0.3s; }
+        .collection-item.locked img { filter: grayscale(100%) brightness(0.5); }
+        .collection-item.locked .item-name { color: #777; }
+        .lvl-badge { position: absolute; top: 2px; right: 2px; background: black; color: white; font-size: 10px; padding: 1px 4px; border-radius: 3px; z-index: 10; }
+
+        #item-action-menu { position: absolute; bottom: 0; left: 0; right: 0; background: #222; border-top: 2px solid var(--primary); padding: 20px; display: none; flex-direction: column; gap: 10px; z-index: 150; }
+        .action-btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-equip { background: var(--primary); color: black; }
+        .btn-battle { background: #f44336; color: white; }
+        .btn-sell { background: #4caf50; color: white; }
+        .btn-cancel { background: #555; color: white; }
+
+        #battle-view { text-align: center; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .battle-stage { width: 100%; height: 200px; position: relative; margin-bottom: 20px; }
+        .fighter { width: 120px; height: 120px; position: absolute; bottom: 20px; object-fit: contain; transition: transform 0.2s; filter: drop-shadow(0 0 5px black); }
+        .fighter.player { left: 10px; }
+        .fighter.enemy { right: 10px; filter: grayscale(0.5) hue-rotate(30deg) drop-shadow(0 0 5px black); }
+        .hp-bar { width: 100%; height: 10px; background: #555; margin-top: 5px; }
+        .hp-fill { height: 100%; background: #f44336; width: 100%; transition: width 0.2s; }
+
+        #gacha-anim { display: none; position: absolute; top:0; left:0; right:0; bottom:0; background:black; z-index:200; flex-direction:column; align-items:center; justify-content:center; }
+        .anim-box { width: 100px; height: 100px; font-size: 50px; display: flex; align-items: center; justify-content: center; animation: shake 0.5s infinite; }
+        #result-img { width: 200px; height: 200px; object-fit: contain; background-color: rgba(255,255,255,0.1); border-radius: 15px; margin-bottom: 15px; }
+        @keyframes shake { 0%{transform:rotate(0deg);} 25%{transform:rotate(5deg);} 75%{transform:rotate(-5deg);} }
+
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Hello World! 🚀</h1>
-        <p>Test HTML Page</p>
+<body data-theme="default">
+
+<div id="game-container">
+    <header>
+        <div class="header-top">
+            <div id="game-title">스틸어 브레인롯 V13</div>
+            <div class="top-menu">
+                <button class="icon-btn" onclick="openModal('collection-modal')" title="도감">📖</button>
+                <button class="icon-btn" onclick="openModal('settings-modal')" title="설정">⚙️</button>
+            </div>
+        </div>
+        <div class="money-display"><span id="money">500</span>₩</div>
+        <div class="eps-display">+<span id="eps">0</span>/s</div>
+    </header>
+
+    <div id="lobby">
+        <div class="auto-toggle" id="auto-btn" onclick="toggleAuto()">
+            <span>🤖 자동 뽑기</span> <span id="auto-status">OFF</span>
+        </div>
+
+        <div class="shop-row">
+            <div class="pack-card pack-normal" onclick="buyPack('normal')">
+                <div class="pack-title">일반 팩</div>
+                <div style="font-size:30px;">🎁</div>
+                <div class="pack-cost">10 ₩</div>
+            </div>
+            <div class="pack-card pack-rare" onclick="buyPack('rare')">
+                <div class="pack-title">레어 팩</div>
+                <div style="font-size:30px;">💎</div>
+                <div class="pack-cost">500 ₩</div>
+            </div>
+            <div class="pack-card pack-epic" onclick="buyPack('epic')">
+                <div class="pack-title">에픽 팩</div>
+                <div style="font-size:30px;">🔮</div>
+                <div class="pack-cost">1000 ₩</div>
+            </div>
+            <div class="pack-card pack-legendary" onclick="buyPack('legendary')">
+                <div class="pack-title">전설 팩</div>
+                <div style="font-size:30px;">👑</div>
+                <div class="pack-cost">5000 ₩</div>
+            </div>
+            <div class="pack-card pack-mythic" onclick="buyPack('mythic')">
+                <div class="pack-title">신화 팩</div>
+                <div style="font-size:30px;">👹</div>
+                <div class="pack-cost">50K ₩</div>
+            </div>
+            <div class="pack-card pack-god" onclick="buyPack('god')">
+                <div class="pack-title">갓 팩</div>
+                <div style="font-size:30px;">🌌</div>
+                <div class="pack-cost">2M ₩</div>
+            </div>
+        </div>
+        <div style="text-align:center; font-size:12px; color:#888; padding:0 20px;">
+            신규 갓 등급 7종 추가!<br>총 13종의 갓 캐릭터 (무지개 테두리)
+        </div>
     </div>
+
+    <div id="my-base">
+        <div style="text-align:center; font-size:12px; margin-bottom:5px;">나의 베이스 (<span id="base-count">0</span>/10)</div>
+        <div class="base-grid" id="base-grid"></div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="nav-btn" onclick="showLobby()"><span style="font-size:20px;">🏠</span>로비</button>
+        <button class="nav-btn" onclick="openModal('battle-modal')"><span style="font-size:20px;">⚔️</span>배틀</button>
+        <button class="nav-btn" onclick="openModal('inventory-modal')"><span style="font-size:20px;">📦</span>인벤</button>
+    </div>
+
+    <!-- 모달들 -->
+    <div id="inventory-modal" class="modal">
+        <div class="modal-header"><h3>인벤토리</h3><button class="close-btn" onclick="closeModal('inventory-modal')">×</button></div>
+        <div class="inventory-list" id="inventory-list"></div>
+        <div id="item-action-menu">
+            <div id="selected-item-info" style="text-align:center; color:white; margin-bottom:10px;"></div>
+            <button class="action-btn btn-equip" onclick="actionEquip()">장착하기</button>
+            <button class="action-btn btn-battle" onclick="actionBattleStart()">배틀하기 (XP획득)</button>
+            <button class="action-btn btn-sell" onclick="actionSell()">판매하기 (+<span id="sell-price">0</span>₩)</button>
+            <button class="action-btn btn-cancel" onclick="closeActionMenu()">취소</button>
+        </div>
+    </div>
+    <div id="collection-modal" class="modal">
+        <div class="modal-header"><h3>도감</h3><button class="close-btn" onclick="closeModal('collection-modal')">×</button></div>
+        <div class="inventory-list" id="collection-list"></div>
+    </div>
+    <div id="battle-modal" class="modal">
+        <div class="modal-header"><h3>배틀 아레나</h3><button class="close-btn" onclick="closeModal('battle-modal')">×</button></div>
+        <div id="battle-lobby" style="text-align:center; padding-top:50px;">
+            <p>캐릭터를 선택하여 배틀!</p>
+            <button class="action-btn btn-equip" onclick="openModal('inventory-modal'); closeModal('battle-modal');">캐릭터 선택</button>
+        </div>
+        <div id="battle-view">
+            <h2 id="battle-msg" style="color:#f44336;">전투 시작!</h2>
+            <div class="battle-stage"><img id="battle-player" class="fighter player"><img id="battle-enemy" class="fighter enemy"></div>
+            <div style="width:80%;"><div>Enemy HP</div><div class="hp-bar"><div id="enemy-hp" class="hp-fill"></div></div></div>
+        </div>
+    </div>
+    <div id="settings-modal" class="modal">
+        <div class="modal-header"><h3>설정</h3><button class="close-btn" onclick="closeModal('settings-modal')">×</button></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button class="action-btn" style="background:#000;" onclick="setTheme('default')">기본</button>
+            <button class="action-btn" style="background:#fff; color:black;" onclick="setTheme('white')">화이트</button>
+            <button class="action-btn" style="background:#b71c1c;" onclick="setTheme('red')">레드</button>
+            <button class="action-btn" style="background:#0d47a1;" onclick="setTheme('blue')">블루</button>
+        </div>
+    </div>
+    <div id="gacha-anim">
+        <div class="anim-box">📦</div>
+        <div id="gacha-result" style="display:none; text-align:center; color:white;">
+            <h2 style="color:yellow;">GET!</h2>
+            <img id="result-img">
+            <h3 id="result-name">Name</h3>
+            <p id="result-stat"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 데이터베이스 ---
+    const DB = [
+        // Common (Rarity 1)
+        { id: 4, name: "강탈자 프테라", val: 30, rarity: 1, img: "https://i.namu.wiki/i/S6GH5Htxp89QbGsicC-uabEArjuFZuhOxVyoRcKblcP3wL08AIpryqnV7cnNvk3VILkjs0MqHXJ1ZyHfKfT0kT6gYhwYAtl0wKVvYe77YNCzv5O75me17wI9ejDC-uWNqMrRBZdBq_fIIuGXnMNkRA.webp" },
+        { id: 5, name: "본부리토 반딕토", val: 45, rarity: 1, img: "https://i.namu.wiki/i/qMDqzadLmyw5QC6pp0mbrrgtfNCTi2BgCaPJayjPSFMxEvMBPxGoqj9eXhRXPjjwGIHG1dWyIUTS76IxKn9mulJP7--_IaJ5zYtfGBU9G5Hxu112I64YKQCFk7AZtYg0HNdhG5SWO8pl_gKodscy4Q.webp" },
+        { id: 9, name: "트리피트로피", val: 15, rarity: 1, img: "https://i.namu.wiki/i/c7khrxhyiDB1b79Iv19N3EVMzQBQpQfy7_R7qWx-N_X5j_gw2fRXrQ7qd8bNNpWTxmTfcHr1V720EZmosRGG_-aO_Ss0AVEGE53C9n0TSznNmfIHoXczT9dOFeBET5kuf9SBtVzVbIN4bfOEt8yfrQ.webp" },
+        { id: 10, name: "보네카 암발라부", val: 40, rarity: 1, img: "https://i.namu.wiki/i/9YOGd2VhnjWY81HFbVzMQdCk6SwXP_hzp4S7U5NWycioSvqnWyI-WSDrHX47xu4q1rh0EeEJqjUm7HpDrvmnG5trEOwtwIUz3GyyShtjK5KlDf2kBSVG9qqQcKKNl_uADC4De5KPVqKC1AA4xshraQ.webp" },
+        { id: 11, name: "히캌투히타포타모", val: 50, rarity: 1, img: "https://i.namu.wiki/i/sD7bUvYXIw33P_uMlgGABKR46DRGDcFJfFABrtXZgQpjUOYdgvcJg4pq3Q2g94lGhHqbvv98V9hHXqT2sEQ2yA3JL_UsUK_-XRBLPPD9sIvu4abxI_lPT619Gniz8ldflQwrZNUXx_eBUzzhKChXow.webp" },
+        { id: 12, name: "타타타 사후르", val: 55, rarity: 1, img: "https://i.namu.wiki/i/uJ8cuQb_nnSy9hWbiIK89PaydY-cREU5uSA6zDrhenVGBi1kMBxBiQg4bnVzOLaBOzKKeQQqaa0rcuoMnB7gsVbAZaFbUNTOXCKNpOmjFkNv47oNXsISqp6yY1s-VEOUADgGN3yTwpvo_LwNQ2oKCw.webp" },
+        { id: 13, name: "트릭부락 바라붐", val: 65, rarity: 1, img: "https://i.namu.wiki/i/AzkLdKiPJpyu_rdmlUayXbbeCFz3eS9C7edYItIDLLoZLZ5wtyf3ivTUqVQ_ePYX2Vtg5aAIQ3mAsytatUxIgqQrItDVGUqesR2to9I3bUqnxE1_qhR97n-6rthb32V1n4U1h9Hc8rnTwenmXuakmw.webp" },
+
+        // Rare (Rarity 2)
+        { id: 0, name: "누비니 피자니니", val: 1, rarity: 2, img: "https://i.namu.wiki/i/2TPAcGkYR-OCMgvKMurRodCfzPmZZIORq50mhKZ-P9czgmON4GVsGmbYmbw5jeosqfhbBqEmbkprwFaJP9XKsUJlzUqhknxIzegnfFhNGwAlWG9O1ON6Ha_cc6064kILj0MXQFj1D5eHymZ0Gl3ThQ.webp" },
+        { id: 1, name: "리릴리 라릴라", val: 3, rarity: 2, img: "https://i.namu.wiki/i/o2TIDVPkV8APQs6_azvWaZIQgARRnaWYgtq2y7RoRATkfIgQAngSpUC68SmTPnGAiqpkaIdSZJpJTr4gBLMdJglSfBS0ChAjuHueVfw6ynCFbWkov1HbPuObJNZharc3aoNk9kCmdXYy8oyTlPZZDQ.webp" },
+        { id: 2, name: "팀 치즈", val: 5, rarity: 2, img: "https://i.namu.wiki/i/GSd6Tw8GxlFT3f1hPBc64RIF_rjpIkp-Czm3tmgxpXjM1YlS1cqTPXjJggbVcEI_Rt-FwuQTVVo5Q5ZA5Bbqr01hqGo-9xce6CWumCjMTdvLn9XvAy_aUeUcxXHV5b4Z5z-R89MOKWQxI1D3kE0EaA.webp" },
+        { id: 3, name: "프롤리 프롤라", val: 7, rarity: 2, img: "https://i.namu.wiki/i/Bnsp0t-AH32xHo_07o896ZpMjFL_Nqy7NUkm6OdDx_Esp3SppQNYTVnvR6ZPQm-n-F8IiAwmDgJbSo4pH2jZbrbzlQivTTM6XOii_CQXCK6zMJwro1cmpDjwhWlFkuUy3Uqz9GPNrEHfg1eMPhiCwg.webp" },
+        { id: 6, name: "달 파디 페로", val: 9, rarity: 2, img: "https://i.namu.wiki/i/E6pF9EhddC8Y8vY0DfCjwDfhe5Tf5QhJaUyOza2sXU9kS50e-PPIUdMudPMqTLEqXqWsh6NJLQjsDUTmOGerxytaMHpd6WPUasq0grxIty5j1lnhEKorI9sM6B5NpuIuITbZTOLUESmeUXhTM-hoFA.webp" },
+        { id: 7, name: "스비니나 봄바르", val: 10, rarity: 2, img: "https://i.namu.wiki/i/70fYy97CIqXrZYDzgZNv9iQtO6LM8YzPRec79WKQ9PNPxjGeNFQQ0OTzQjlo0WJopkuTh2oNT6zmm40zI4FAld8E90z9LcBnCEP9FmfDMoZbQNJiyTqkMuidhEujnGTRa6WebY0uknvBAdFuqObgrw.webp" },
+        { id: 8, name: "피피 키위", val: 13, rarity: 2, img: "https://i.namu.wiki/i/zDv0SzOJaSqbDLXDx8vsQDvcbcF3luF6k00VT9NNBfCzkAc-HgwgTDNmNedAbt92s16M0YwwDEq7RuM6EzI9njrC8xEklirxEeqEYlsKMMWeBjTNIEE4LXzLOK3dU7dpkVFXD0HPZSeLyqRJAgVVBA.webp" },
+
+        // Epic (Rarity 3)
+        { id: 14, name: "카푸치노 아사시노", val: 75, rarity: 3, img: "https://i.namu.wiki/i/E3rk2GsDkrbl5P5nNFjIY4iqIzTOaDrcbtDRpl1L0t_aFzdHzKcyhUCwxD-H14gLp1YVTwdLhiyLM9ZDwRpmAni9hLZaS0D7UOKtpzhPguDJMWZ8gGtwdQMy5U0NyHavEQDEem7mgYZs5Bi1fFBHJw.webp" },
+        { id: 15, name: "브르르브르르 파타핌", val: 100, rarity: 3, img: "https://i.namu.wiki/i/t_YbZv2DsfHunbrdaA9vg9ferAYJLWp36uEIwARkPZtLvWTFgXxJ1F7-tAqe2tdDqyg7YSqnuoyA7g-ICh_hPG2HWfR4jkYDNAhRK_gyRH77_2eT-I5-0e5wqeud2ovAiAyboW2x58Lb-AxvzMT5SQ.webp" },
+        { id: 16, name: "아보카도 인펠로니", val: 115, rarity: 3, img: "https://i.namu.wiki/i/sdzSd3LJiE0RXB_b-ut7Xv84mpHt04WIGQPiudgw5DYEyC3q_-pdM4NHEqS6ub1fPYiIoBSLnCyOdUskQgRwLd8dam3mBnBeqZ45mxWYqgLsv--9puOEgXFeXmxipbfUlnODMKtpNcO8e9OCH_AVbw.webp" },
+        { id: 17, name: "트롤리 메로 트롤리 치나", val: 125, rarity: 3, img: "https://i.namu.wiki/i/rbnhFlGgeTAUKjLUt7u4j8InRBbpJ0HDW1YqBO_kleF9A2-SSgtxpVC0TxpHVWqxq4PiFr2MR2wyC3_-EfvixJb8WHiG8QOTSvs6hnlGqSFrxPMIWAvDKfc83HakPovMJUbfdjDMKQQhDSa70_w5Ow.webp" },
+        { id: 18, name: "밤비니 크로크 디니", val: 135, rarity: 3, img: "https://i.namu.wiki/i/BNluf6BoxVv3dzP27KHjRSPCWJ1E1Gm0-ptIigAuosaNMk-hiLwI7RBkYr8LDox-A5TWGy2TULIzHYM5kYAM3w.webp" },
+        { id: 19, name: "바나니타 돌피니타", val: 150, rarity: 3, img: "https://i.namu.wiki/i/eD_1bw9DewyQKgmckdmG89kMgRWDiMymZKc4w1XDPxlkNeUKtJrgZEK_QOdcEEM7DVw2MlDl_DSQTs4AThq-8QDLquHtonjFVja2B_P1cwFhhmKb_w-wZW7yN1ha8EDD7bGlso3ePbdrKKhFrDa1hA.webp" },
+        { id: 20, name: "페로첼로레몬첼로", val: 160, rarity: 3, img: "https://i.namu.wiki/i/eQ0SLSqt34qa7xQu1Hydv4WIhMxpT8LsBz-_YY0M5nfm6UbHibcj1MzcxsrROYBrKzqBQ3h0BseEJ2CDJiga_gkw75h4DV46oNxg3b_IBL5LRRtTm-_0W_0tQHc3IOm8erV8HGGa3xpAcgA8TWUiYg.webp" },
+        { id: 21, name: "브리브리 디크수 봄비쿠스", val: 175, rarity: 3, img: "https://i.namu.wiki/i/lxue9Skl633EnQ93ahuAWLyJbO78bk7DXDBRsQvfcM7wIRKGVwdSSPcBH2NpOMxRg5tNnOQLjzyKQEPnIlaKMZlvp2kndHjKXM4V_nI3pCS-j_Ws0jSqIEiKIaQiy2RDO-NNe7JKmvJD81aND9mm9w.webp" },
+        { id: 22, name: "아보카도 쿠포", val: 225, rarity: 3, img: "https://i.namu.wiki/i/RaLpV7aajBKlRo_vvY5R8MJqst8fbFk58eI4ek7ceT2XjzeRFb-YbcszNy3gyMwC7c6ULko6i_Bzmt5-WEgr2-xZWYdQXS1rx6633EZupuhgm_h5cAntZyiOc_IouCDqlAWfENWKmXVqactxdEV41g.webp" },
+        { id: 23, name: "살라위노 펭구위노", val: 250, rarity: 3, img: "https://i.namu.wiki/i/VrKJQEcDbiv8iL1oYrN04VZPzPg5CUuSBXMze1ICFxfeICtZATs0tMdUuUfVlVdFxEkti4TUOgBhdWxcomPLC0Cx4QLRDPB72sYNgv8Fzmpu8ZW6Yw2XDBKlyE1XQkzHuEyzn8EXjJeenRP_ZscwKw.webp" },
+        { id: 24, name: "웜보롤로", val: 275, rarity: 3, img: "https://i.namu.wiki/i/gqj4uvTfmLWWoba4-LPqnZsytdsYrQlmplyi_2aGHzpz5RAHVSGDjSKp2Vnv7K_gmiyzL5ljOuXJj60mbMmJTqOqLVzAxofOXLmzx2W2348VK98nEuCIT1cx3DoeSjsV6eqDvBlvUpqbIpgNJC7OTg.webp" },
+
+        // Legendary (Rarity 4)
+        { id: 25, name: "브르발롤리 롤리롤리", val: 225, rarity: 4, img: "https://i.namu.wiki/i/pDnklO1zHhHgWxknp_hBapGiuj6Vp1KwdllCe4TlhJ8WjLsQHBio4skkvLdh1wI2krK3fi_QSlqY_KCDEO5bwnyEo8biow1HbF6_Y6C-GHoAzjmWaPEEVZ26LNzp4r6SZJlQzGAwUnJL4BSgQRR4Hg.webp" },
+        { id: 26, name: "침판치니 바나니니", val: 225, rarity: 4, img: "https://i.namu.wiki/i/IuN4WsDgI1ny2zKIwrLaDYJBpYvnnbDpfh7VAqAy6SolmvspE6Wf1LNheXh5B1QVXjalqZs6MyFleb_-rOPuM9wmiKpTKI0rrncsbxu_hPiGQctUh_Fmqc8qm4X771Jdz7G12oEJdbf9BrCMIUeaHQ.webp" },
+        { id: 27, name: "발레리나 카푸치나", val: 300, rarity: 4, img: "https://i.namu.wiki/i/mAsRA5d-44d_J6r0dGY37FEMqm6sf6ukuM3S_UUi4DzfMG0i7lI7mBMSqS0KPVPWGj4rfHt1JR9RLdWelQrVS2r8XUjc_8HctS2UVXiS0jQ80HbEUNeaDfp9UQweeGyhHmI8LKehBNN9-WoBYHxCgw.webp" },
+        { id: 28, name: "쉐프 크라브다 카다브라", val: 600, rarity: 4, img: "https://i.namu.wiki/i/e2Pya7bFyU9nkTgMyEyn7OtVlQ1kcif18zIavyYt1jOh-kFdONh5dqXeQdKGMQ0LxBHpXm9CMznLcsYGcJ_i81fud7-OJa_8gJJKRP8PXZqZ1EyAIG2rEHUP5Sa3jeunb9zGL69zdnCujsHiqgZePQ.webp" },
+        { id: 29, name: "리오넬 캌투셀리", val: 700, rarity: 4, img: "https://i.namu.wiki/i/EUR-MdAX-TRvmHIJP-asHbPfdf7WcGOLzNzIWxhJm05pzcvcHS5rarkbls2gbjAmOLyvDR9KPH6_2qPriM3FNRBmwVHiXDMzAatRUfeld1oVqggv-hNjAJ54kqF4ucWwEbrjbVd6Df56i9eYLF-t8w.webp" },
+        { id: 30, name: "글로루보 크루투 두릴로", val: 750, rarity: 4, img: "https://i.namu.wiki/i/ttxqJ6zLFaUlnNuktcKXygWQuYyP6PMwLCjT8CwKpzzHPksyVlECuhORVxNz0a4DHKJpBlyNuIb8vZr11WwEkk7NOFOYx2X_awOr1Leas90BFwGpCYDOVTrzWRcK_5ubOoCRkM_WRUQYgX27UWwBHw.webp" },
+        { id: 31, name: "퀴엘로아멜레노", val: 900, rarity: 4, img: "https://i.namu.wiki/i/8B-uA2BRI1XsmTdftMeJuQ1EgM6BgPHYOoks_rhK4PwGE7ytTA4Lcc5mNmtfKF16ZbS1e5-nyAMZdvff14WFNV2e5WL8feBNDeFZ6o4G2AV17_iL7V3vyI0z3HrfGnN3JdNPl940I5fMdhU3dg1f6w.webp" },
+        { id: 32, name: "불루베리니 옥토푸 시니", val: 1000, rarity: 4, img: "https://i.namu.wiki/i/4XYlW5p3GADd0Wge2_q_d0-z32bMEwwKC0BsRRV4rMoxaxXMwTEuchquBOoTBX9C968WakIFZ11Jp-8yxKvpNvXB4L9wTvJHm86A02My79OFFhen_fFJedp9PpSdh0gxCgmHbJjiSM-4hc6UgujiqA.webp" },
+        { id: 33, name: "피피 포테토", val: 1100, rarity: 4, img: "https://i.namu.wiki/i/bw8Ch18g8hw0tm5g0uxYwV1sDa2CeDMzQ9Dy6254VqN2Uv2FV4M4XeKdlyymeQlooBr2_7mfBQnSV06UCoQ6xqx-u6bEeXhNA8HLUV9GiFuxuKhgnUywO7RA98_5_q5HygyLexcxDNVpmLGf9zb1TQ.webp" },
+        { id: 34, name: "스투로 베리니 플라밍고", val: 1300, rarity: 4, img: "https://i.namu.wiki/i/rhFOL2E0tRV75uivYZerrH0N_AXP5rpOssZHd4cGht5RZWJu3dXMZ0-pbkbke718x2b9XdRU8RYkn52kynWXujysH8LCrpz0AFZCpiqeqA2N6YnLlfF-G8iMupzrgsWOno9SuaP0e9LaNuggLTPIbQ.webp" },
+        { id: 35, name: "판다치니 바나니니", val: 1600, rarity: 4, img: "https://i.namu.wiki/i/P6Y51LlYYsQtT-uqL6KqVDNSFl7vnCMjS4WrqIWv5SWX5Ujk7SUlRIklU0ZZqwuDzagu0b-LBq3OJ_k8SRP6eF6Dj4iM012gSEwJaGlimzzo80nBGJD1FEGJdc0LAQKCPakh5tYzKTJyP_9D0gGiWA.webp" },
+        { id: 36, name: "시그마 보이", val: 1250, rarity: 4, img: "https://i.namu.wiki/i/UiA742TtaMbuaRzCWUAILNPjLRLMoouJDtO5wDU3VO4YYT6thiq7sLb1OwfkcUJJMULWQtVT7t05Q0RMOhpv92rjtEVyZfT4dsfDwPW_ZS__EgX9cVG5kvmjs3kHcZZpgUQ5pZsnh6I5ke7nlfmBlw.webp" },
+
+        // Mythic (Rarity 5)
+        { id: 37, name: "프리고 카멜로", val: 1100, rarity: 5, img: "https://i.namu.wiki/i/P2evI_2qviMpSpKHROEoqapUAYwJ3Ka6s01503zNLW-49_k_35BsoEZSsSyqYTl5HVipQMQc2oWHgQIm6eFJE1Nu46BXUpseHpbaOkA_hl0E_LiQdlAQidl-YbbT0qDJcWBoMr3CcisEtiHfgyLxPA.webp" },
+        { id: 38, name: "오랑구 티니 아나나 시니", val: 2000, rarity: 5, img: "https://i.namu.wiki/i/GZb1CqFzXc5wMSY-hxzziv4T1PUfghVEYvGn6DWtxVW9bWw3RDzP9GoW0LFINY4QB2h2IsJJrshfENN1l2757ATFSDvjui8HmEk6peDuopq6qa3zvSChSeuppcAvOrwiy7OdW7c8DTLS_vgx4macIQ.webp" },
+        { id: 39, name: "라이노 토스텔 리노", val: 2150, rarity: 5, img: "https://i.namu.wiki/i/Qar0_wwbImGqHtcHRjnHdVd3W9E95i6OQ1hfD0DCfuLNbe8U5QkKb-a-ykUVqyd-3-TKnhJJfzH1mCkEfnHj8NnXr292-vaMG0jDCM59O1VWAvfuzbL-BBKUGl_VVmgUKIxe7u-R0-xbtSRP_IzvtQ.webp" },
+        { id: 40, name: "봄바르 디로 크로코 디로", val: 5000, rarity: 5, img: "https://i.namu.wiki/i/qwDw0lqcgpWmgYTQ2lJSVqK8QAbExzBOzMibpjP2-OAONuqFW2ZrCUKzSraJaZygfjYqfdKzj8c__gN6diLM1Fvjj_zup0QhVcAk2xAl4jA457s8ViWe5ag13TeLadtR3xsohQMddH7Y_mU7RYuE_A.webp" },
+        { id: 41, name: "봄봄 비니 구지니", val: 6000, rarity: 5, img: "https://i.namu.wiki/i/K_x4AuKyfqczzpbWCfDl9SUa4W3UzDacV_0BFALqf8jl4QUvA00dluURxcNQTjkGHXdA8FKaMFDSB9YbeOCzbywjPRdOiQJACDVYnQ1yJsBbVizPc_Jqkw-EymdEAP7vQuWBBuK3S4yKaWl8AgMSUw.webp" },
+        { id: 42, name: "카발로 비루투루죤투", val: 7500, rarity: 5, img: "https://i.namu.wiki/i/AwX_ibePgnKkhHhs1DIzSgwYF7oTc1fp0XMtl9pYmTSYLM46IKt2vWmuQfJcNsNU8peEjagJSPY_DZe-CvRVn8Mze6Zphe4tZ0x4Y5Gsi4HB6wlkBYXKTygV-p36Dh2Lm7xyGo-OwG3cdsUzoPra0g.webp" },
+        { id: 43, name: "고릴로 워터멜론 드릴로", val: 8000, rarity: 5, img: "https://i.namu.wiki/i/COoDuj2tXYiuZZQJFqotlefk4klpnJMGFbw-TJu4A0KqmgwQPFREkXh-Zq_nH-uEBoRJOkAH9d2cXnCrRQaf9ffzAsaNXMUxpXa51zOwTngUqVobljhCJf3qaNBmxrlkGHPGvaRbGGtGfaWp6PmVIA.webp" },
+        { id: 44, name: "레로레로레로레", val: 8750, rarity: 5, img: "https://i.namu.wiki/i/jJv3LNlXMELbCN1ON_YQRs2m5c9oh4bmP3x-n-LdRML2O7gh-kgdUXerv_kErXrG2xDHHQzBeacw2wwYzvV0PfKaPeY5FawzNBP2gfbLZEhVBiQ1ghtiE4mR58nVhgbZj8FJ2sPk1Nxs3Mbb7cTH3g.webp" },
+        { id: 45, name: "테테테테테테테 사후르", val: 9500, rarity: 5, img: "https://i.namu.wiki/i/4Oj0c-76yHJY5KLi9qxDpgiX2gEMd_sAzAoE1QJ5QiCkxZ06Yca7SIMkhRBJoV7zRP4LTl_NnqjEB_mvqQlOoWr0xGYputCoegiQvp0H8XZtDNYhBP0ETF5qGt8di5foKZxNaSFcRV_0aizBeR0hzA.webp" },
+        { id: 46, name: "트래코툴루 델라펠라두스투즈", val: 12000, rarity: 5, img: "https://i.namu.wiki/i/IzSidggkryf7ZYH4PYz2jz9LnZtV_diXr6AxKOHXjLnp0JfinXj5RN70mP50DtjO0LLk58QxPZY-00rvhkfq65Y-L_jI6Er8y0BhqURV5PaXj6Yjc7WgaVxUyXDVMF1zneil1JcWskjLMwyd9ynpWg.webp" },
+        { id: 47, name: "카코리토 멜로니토", val: 13000, rarity: 5, img: "https://i.namu.wiki/i/rneIZ3uGzl09xVPUnzG1yrQhCj8Pa5FnHxZFrE0Kj0ho5ezhCVxjD5PZKCy1JVNhLmPYRkfy1rQc56iTVSOj9NsMrd5QsKZ_LVPAQDN2kQbsGSmuVDqB6ojD6xIXlOGLSMkdRdI2Rlp3mfdnvOQBdA.webp" },
+        { id: 48, name: "토일레토 포카치노", val: 16000, rarity: 5, img: "https://i.namu.wiki/i/Jf3Z4jQZWnuiyzEmhBTjkbGLr5YVzfeorAUhZK51jI1kmLP89ieQir1JN-kBBVXm1n7BUlAegLpWD5Ltl9xrQDd3TXXihD80J8_P1WHux_5-A5-0XJC01aobglOYLk49y5BDPcm_AZYz6jA6MsI7bA.webp" },
+
+        // God (Rarity 6)
+        { id: 49, name: "코코팡토 엘레판토", val: 17500, rarity: 6, img: "https://i.namu.wiki/i/koPBybXWTxWKrtVo4bY3FDFYUcOoc02ZXVbDB7QlOsZpKTWANxmJUjEPUT2q_gpDOeZea1OPifp_0ZhAUW837Jj66j35Mz06mcF6Eb1XgB9Y3maCbT1irllO1qBf_GKs21RNl1j_4nxCCuUwfvHG8A.webp" },
+        { id: 50, name: "지라파 첼레스테", val: 20000, rarity: 6, img: "https://i.namu.wiki/i/8fPKwHYxzEuJh6EF1qNeM5Wy52_5ThiCL-byKgMd3OBAWmUo3ZSBnvCx1NE7ZXfLym6Ja5ne8xNyAXzKc_AZrkRiIXHVOedP9mxKUb9GFyoqxQnMlk9bPdnLaz27HEMxt22hmZUtaN_Jxif0xGwUtg.webp" },
+        { id: 51, name: "트탙타테로 트랄랄라", val: 10000, rarity: 6, img: "https://i.namu.wiki/i/WbRyUWVK71lL9dWJ6QNBpyUQoyzQBZDQbSzD_cRPFZhrZVfMnZniB1YjYkzc3k6AfPcW2HB-A8fVay4UwYy9sxOOscUoAqXnUvMWrIibEArTJj-2Hf7ygIGfChBKh2mK0em2qt4ZTrlEgYisnidorQ.webp" },
+        { id: 52, name: "오딘딘딘둔", val: 75000, rarity: 6, img: "https://i.namu.wiki/i/xvof4Iq9oh_6BNOiFUqaLWQtTntJYQ1piWzOgdhYW_9IIg_Io43WMXsP-zfq4j9szUrnVUgEDxpjsQvQnE2vI7KpKZs_ftaI8H59sN5w0648C1hceyFEQvKognfrRHMkKqhUQVQ09vM4NS5YGAu3Rg.webp" },
+        { id: 53, name: "트랄라리타트랄라리", val: 100000, rarity: 6, img: "https://i.namu.wiki/i/JzdXQiaHXC8Qb-1GPXNJAR6s7HOWz33ooRAYlB73n5z8Vleg9SQdfXLAFHZRfG2mwpTAYmcIRzoJY84aNrIauYwEuguKDvxxq64RT4Pv613gPlvIcohA5f-qixKHz6fMK-7zAOXY8k5K1ykQDFHviQ.webp" },
+        { id: 54, name: "트레누로 터보 3000", val: 150000, rarity: 6, img: "https://i.namu.wiki/i/UrhZ3POgmnWPlmiX6CA1TYjePe9UDIdAaIGwJXeLDPXSzAaWpOUXEQiIX9mWiLsezbR7sVgCc5fFD9L3gCT8QU9Ty_xwRjEsoKh6fmwu218P5OyZ-Y1QfZwPfabIkP4jJpTqYyhbdEhvemIhHQLl5A.webp" },
+        { id: 55, name: "트리피 트로피", val: 175000, rarity: 6, img: "https://i.namu.wiki/i/NnyxxU3lJfm1V0mT9PZVeo9M2xgfB1sObjGfS5cbKmQfYDP17i8ap-No_KFlgm0nv3mgfqzmD346ljfL_X7Y2V5zwbNlNzbe9Hw8JyN_5kBIFkDXX7ByPOwVpOa1oTgpaJu-5_B-3aZuBUaP4cC45Q.webp" },
+        { id: 56, name: "발레리노 로로로", val: 200000, rarity: 6, img: "https://i.namu.wiki/i/jYYzSjnAf-nRT18CawgVcKXLoUXY1I8mf51GnI3tK3y2vGZ--y0fGr07v844XLDuEQRNUS5lVuUoq5q_heXYQOkksqYnJ6FHwx31cPBhPCYt1fTC00fSYtNq1ym2M5yuHZjksSx8fXVSfmeQxe0Jyw.webp" },
+        { id: 57, name: "파크락 마마막", val: 215000, rarity: 6, img: "https://i.namu.wiki/i/5md0i63R_MP9P-fHHEg0HITWBu33H9rQXxUhsz57k5EOmV1FLXFbxkev3lW8jQ7MP2fyCNQT2JOXUfDCrSKikhPU-qrOG4Ol89KERLFhth9U3lkkZ9WPa_bpcKGlv-UsHvi0B0Q_99uWcpA3G4MN-A.webp" },
+        { id: 58, name: "피쵸네 마키나", val: 225000, rarity: 6, img: "https://i.namu.wiki/i/5DTtOoJASjK8mJVTtN-pfDuKZ0hJok0UdaIw6D74KUTPhGEZHea3IeJTA2LReEhVqUYp505agD5wFTn4MgfKdCuHnuY1D6vNBxIpmd9HWpnQq5Urqq7ZVMYmtXD0PE1fq7wCctq55__JS7Xn13v9gw.webp" },
+        { id: 59, name: "트랙티노 사후르", val: 230000, rarity: 6, img: "https://i.namu.wiki/i/jGKPVvG8JH4jnOjtVM0QkgLTSjtL3U52u2RwWVmwbWy0c88rd6veJtnxKwp0Df1aqo_SHWmRlciivUotJFZxTtBEaLEthuanj1vq7lXvDn9VteW_hWJD2BZw3Bw18o1-0IZER7eoWy-IedEb922dKQ.webp" },
+        { id: 60, name: "카카시토 사텔리토", val: 240000, rarity: 6, img: "https://i.namu.wiki/i/tblb_plIJe0yJjF91EpT_b3x3_mEWKug8GNnymn2rtX_1ujLrPT04cVAh5v9HkhpwH4TCck-S9en3T-JwPXIxnYZVFu4FiDfzx1Qmlcom7z3k0Nots2-SFoAGhBKNYjabCta-PVpDaVo7fet8kO85A.webp" },
+        { id: 61, name: "아쿠아낫", val: 245000, rarity: 6, img: "https://i.namu.wiki/i/8NlNhsUE7T3nLL_p1doppNWIAWimMVd9gr4kFbsLyvIW7kZnnXvSszLuT0G1VKfQK5GFaJoiL9ypNSz5aqgdEqdvUGHwAPodPp2VldtoRSgb9tzpiaCHN9jiXxf0DGuyKAHrxRp5wPaFSGty7dicuA.webp" }
+    ];
+
+    let money = 500;
+    let inventory = []; 
+    let base = [];
+    let unlockedItems = []; 
+    let autoActive = false;
+    let selectedItemIdx = -1; 
+    let uidCounter = 0;
+
+    window.onload = () => { initBaseGrid(); updateUI(); setInterval(gameLoop, 1000); setInterval(autoGachaLoop, 1500); };
+    function initBaseGrid() { const g=document.getElementById('base-grid'); g.innerHTML=''; for(let i=0;i<10;i++) g.innerHTML+=`<div class="slot" id="slot-${i}"></div>`; }
+    function gameLoop() { let eps=0; base.forEach(i=>{eps+=i.val*(1+(i.level-1)*0.1);}); money+=Math.floor(eps); document.getElementById('eps').innerText=Math.floor(eps); updateUI(); }
+    function autoGachaLoop() { 
+        if(autoActive) {
+            if(money>=2000000) buyPack('god',true);
+            else if(money>=50000) buyPack('mythic',true);
+            else if(money>=5000) buyPack('legendary',true);
+            else if(money>=1000) buyPack('epic',true);
+            else if(money>=500) buyPack('rare',true);
+            else if(money>=10) buyPack('normal',true);
+        }
+    }
+    function updateUI() { document.getElementById('money').innerText=money; document.getElementById('base-count').innerText=base.length; renderBase(); renderInventory(); renderCollection(); }
+    
+    function renderInventory() {
+        const list=document.getElementById('inventory-list'); list.innerHTML='';
+        inventory.forEach((item,idx)=>{
+            const div=document.createElement('div'); div.className='inv-item'; div.onclick=()=>selectItem(idx);
+            const rc=`rarity-${item.rarity}`;
+            div.innerHTML=`<span class="lvl-badge">Lv.${item.level}</span><img src="${item.img}" class="item-img ${rc}"><div style="font-size:10px;text-align:center;overflow:hidden;width:100%;white-space:nowrap;">${item.name}</div>`;
+            list.appendChild(div);
+        });
+    }
+    function renderCollection() {
+        const list=document.getElementById('collection-list'); list.innerHTML='';
+        DB.forEach(d=>{
+            const un=unlockedItems.includes(d.id); const div=document.createElement('div');
+            div.className=`inv-item collection-item ${un?'':'locked'}`;
+            div.innerHTML=`<img src="${d.img}" class="item-img rarity-${d.rarity}"><div class="item-name" style="font-size:10px;text-align:center;overflow:hidden;width:100%;white-space:nowrap;">${un?d.name:"???"}</div>`;
+            list.appendChild(div);
+        });
+    }
+    function renderBase() {
+        base.forEach((item,idx)=>{ const s=document.getElementById(`slot-${idx}`); if(s) s.innerHTML=`<img src="${item.img}" class="item-img rarity-${item.rarity}" onclick="unequip(${idx})">`; });
+        for(let i=base.length;i<10;i++) { const s=document.getElementById(`slot-${i}`); if(s) s.innerHTML=''; }
+    }
+
+    function selectItem(idx){ selectedItemIdx=idx; const i=inventory[idx]; document.getElementById('selected-item-info').innerHTML=`<div>${i.name} (Lv.${i.level})</div><div style="font-size:12px;color:#aaa;">수익: ${i.val}/s</div>`; document.getElementById('sell-price').innerText=i.val*5*i.level; document.getElementById('item-action-menu').style.display='flex'; }
+    function closeActionMenu(){ document.getElementById('item-action-menu').style.display='none'; selectedItemIdx=-1; }
+    function actionEquip(){ if(selectedItemIdx<0)return; if(base.length>=10){alert('가득참');return;} base.push(inventory.splice(selectedItemIdx,1)[0]); closeActionMenu(); updateUI(); }
+    function unequip(idx){ inventory.push(base.splice(idx,1)[0]); updateUI(); }
+    function actionSell(){ if(selectedItemIdx<0)return; money+=inventory[selectedItemIdx].val*5*inventory[selectedItemIdx].level; inventory.splice(selectedItemIdx,1); closeActionMenu(); updateUI(); }
+    function actionBattleStart() {
+        if(selectedItemIdx<0)return; const item=inventory[selectedItemIdx]; closeActionMenu(); closeModal('inventory-modal'); openModal('battle-modal');
+        document.getElementById('battle-lobby').style.display='none'; document.getElementById('battle-view').style.display='flex';
+        document.getElementById('battle-player').src=item.img; document.getElementById('battle-enemy').src=DB[Math.floor(Math.random()*DB.length)].img;
+        let ehp=item.level*50+100; const max=ehp; document.getElementById('battle-msg').innerText="전투 중...";
+        let t=setInterval(()=>{ ehp-=item.val*item.level+Math.random()*10; let p=(ehp/max)*100; if(p<0)p=0; document.getElementById('enemy-hp').style.width=p+'%'; if(ehp<=0){clearInterval(t); win(item);} },500);
+    }
+    function win(pet){ document.getElementById('battle-msg').innerText="승리! XP획득"; pet.xp+=50+pet.level*10; if(pet.xp>=pet.maxXp){pet.level++;pet.xp=0;pet.maxXp*=1.5;} setTimeout(()=>{updateUI();openModal('inventory-modal');closeModal('battle-modal');},1500); }
+
+    function buyPack(type, auto=false) {
+        let cost=0;
+        if(type==='normal')cost=10; else if(type==='rare')cost=500; else if(type==='epic')cost=1000;
+        else if(type==='legendary')cost=5000; else if(type==='mythic')cost=50000; else if(type==='god')cost=2000000;
+        
+        if(money<cost){ if(!auto)alert("돈 부족"); return; }
+        money-=cost; updateUI();
+        
+        if(auto) processGacha(type);
+        else {
+            const a=document.getElementById('gacha-anim'), r=document.getElementById('gacha-result');
+            document.querySelector('.anim-box').style.display='flex'; r.style.display='none'; a.style.display='flex';
+            setTimeout(()=>{
+                document.querySelector('.anim-box').style.display='none'; r.style.display='block';
+                const p=processGacha(type);
+                document.getElementById('result-img').src=p.img; document.getElementById('result-name').innerText=p.name;
+                document.getElementById('result-stat').innerText=`가치: ${p.val}/s`;
+                setTimeout(()=>{a.style.display='none';},1500);
+            },1000);
+        }
+    }
+
+    function processGacha(type) {
+        const c=DB.filter(i=>i.rarity===1), r=DB.filter(i=>i.rarity===2), e=DB.filter(i=>i.rarity===3);
+        const l=DB.filter(i=>i.rarity===4), m=DB.filter(i=>i.rarity===5), g=DB.filter(i=>i.rarity===6);
+        let picked, rnd=Math.random();
+
+        if(type==='god') picked = (rnd<0.1)? m[Math.floor(Math.random()*m.length)] : g[Math.floor(Math.random()*g.length)];
+        else if(type==='mythic') picked = (rnd<0.1)? l[Math.floor(Math.random()*l.length)] : m[Math.floor(Math.random()*m.length)];
+        else if(type==='legendary') picked = (rnd<0.1)? e[Math.floor(Math.random()*e.length)] : l[Math.floor(Math.random()*l.length)];
+        else if(type==='epic') picked = (rnd<0.1)? r[Math.floor(Math.random()*r.length)] : e[Math.floor(Math.random()*e.length)];
+        else if(type==='rare') picked = (rnd<0.2)? c[Math.floor(Math.random()*c.length)] : r[Math.floor(Math.random()*r.length)];
+        else picked = (rnd<0.9)? c[Math.floor(Math.random()*c.length)] : r[Math.floor(Math.random()*r.length)];
+
+        if(!unlockedItems.includes(picked.id)) unlockedItems.push(picked.id);
+        const newItem={...picked, uid:uidCounter++, level:1, xp:0, maxXp:100};
+        inventory.push(newItem); updateUI();
+        return newItem;
+    }
+
+    function openModal(id){document.getElementById(id).style.display='flex'; if(id==='collection-modal')renderCollection();}
+    function closeModal(id){document.getElementById(id).style.display='none'; if(id==='inventory-modal')closeActionMenu();}
+    function showLobby(){closeModal('inventory-modal');closeModal('battle-modal');closeModal('collection-modal');}
+    function toggleAuto(){autoActive=!autoActive; const b=document.getElementById('auto-btn'); if(autoActive){b.classList.add('auto-active');document.getElementById('auto-status').innerText='ON';}else{b.classList.remove('auto-active');document.getElementById('auto-status').innerText='OFF';}}
+    function setTheme(t){document.body.setAttribute('data-theme',t);closeModal('settings-modal');}
+</script>
 </body>
 </html>
