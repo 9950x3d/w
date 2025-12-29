@@ -3,304 +3,494 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스틸어 브레인롯 시뮬레이션 FINAL V13</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>스틸어 브레인롯 시뮬레이션 FINAL V25 (Fusion Fix)</title>
     <style>
         :root {
             --primary: #ffeb3b;
             --bg-color: #1a1a1a;
             --panel-color: #2d2d2d;
             --text-color: #ffffff;
-            --common-border: #4caf50; /* 초록 */
-            --rare-border: #2979ff;   /* 파랑 */
-            --epic-border: #9c27b0;   /* 보라 */
-            --legendary-border: #ffd700; /* 노랑 */
-            --mythic-border: #ff0000; /* 빨강 */
+            --common-border: #4caf50;
+            --rare-border: #2979ff;
+            --epic-border: #9c27b0;
+            --legendary-border: #ffd700;
+            --mythic-border: #ff0000;
+            --bgod-border: #00ffff;
         }
 
-        [data-theme="white"] { --bg-color: #f0f0f0; --panel-color: #ffffff; --text-color: #333333; --primary: #ff9800; }
-        [data-theme="red"] { --bg-color: #b71c1c; --panel-color: #c62828; --text-color: #ffffff; }
-        [data-theme="blue"] { --bg-color: #0d47a1; --panel-color: #1565c0; --text-color: #ffffff; }
-
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #000;
+            font-family: 'Segoe UI', AppleSDGothicNeo, sans-serif;
+            background-color: #050505;
+            background-image: radial-gradient(circle, #1a1a1a 0%, #000 100%);
             color: var(--text-color);
             margin: 0; padding: 0;
             user-select: none; overflow: hidden;
             display: flex; justify-content: center; align-items: center;
-            height: 100vh;
+            height: 100vh; width: 100vw;
         }
 
         #game-container {
-            width: 100%; max-width: 450px; height: 95vh;
+            width: 100%; height: 100%; max-width: 500px;
             background-color: var(--bg-color);
-            border: 2px solid #444; border-radius: 15px;
             display: flex; flex-direction: column;
             position: relative; overflow: hidden;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            border-left: 1px solid #333; border-right: 1px solid #333;
         }
 
         header {
-            background: rgba(0,0,0,0.3); padding: 10px;
+            background: rgba(0,0,0,0.8); padding: 10px 15px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px); z-index: 10; flex-shrink: 0;
         }
         .header-top { display: flex; justify-content: space-between; align-items: center; }
-        #game-title { font-size: 14px; font-weight: bold; opacity: 0.9; }
-        .top-menu { display: flex; gap: 5px; }
-        .money-display { font-size: 24px; font-weight: bold; color: var(--primary); text-align: center; margin-top:5px; }
-        .eps-display { font-size: 12px; opacity: 0.7; text-align: center; }
+        #game-title { font-size: 16px; font-weight: bold; color: #fff; text-shadow: 0 0 5px var(--primary); }
+        .top-menu { display: flex; gap: 8px; }
         .icon-btn {
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: var(--text-color); border-radius: 5px; width: 32px; height: 32px;
+            background: #333; border: 1px solid #555;
+            color: white; border-radius: 8px; width: 36px; height: 36px;
             font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
         }
+        .icon-btn:active { transform: scale(0.9); background: #555; }
+        
+        /* Factory Button Style */
+        .icon-btn.factory-btn { border-color: #ff9800; color: #ff9800; box-shadow: 0 0 5px #ff9800; }
+        
+        /* Luck Shop Button Style */
+        .icon-btn.luck-btn { 
+            border-color: #00ffff; color: #00ffff; 
+            box-shadow: 0 0 8px #00ffff; 
+            background: linear-gradient(135deg, #003333, #000);
+            animation: pulseLuck 2s infinite;
+        }
+        @keyframes pulseLuck { 0% { box-shadow: 0 0 5px #00ffff; } 50% { box-shadow: 0 0 15px #00ffff; } 100% { box-shadow: 0 0 5px #00ffff; } }
+
+        .status-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .money-container { display: flex; flex-direction: column; }
+        .money-display { font-size: 20px; font-weight: bold; color: var(--primary); }
+        .rebirth-display { font-size: 11px; color: #00ffff; }
+        .eps-display { font-size: 12px; color: #aaa; }
 
         #lobby {
-            flex: 1; overflow-y: auto; padding: 20px 0;
+            flex: 1; overflow-y: auto; padding: 15px;
             display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(circle at center, #222 0%, #111 100%);
         }
 
-        .shop-row {
-            display: flex; gap: 10px; margin-bottom: 20px;
-            justify-content: center; flex-wrap: wrap; width: 100%;
+        .draw-count-selector {
+            display: flex; gap: 5px; margin-bottom: 20px; background: rgba(0,0,0,0.5);
+            padding: 5px; border-radius: 20px; width: fit-content;
         }
+        .count-btn {
+            background: transparent; border: 1px solid #555; color: #aaa;
+            padding: 5px 10px; border-radius: 15px; cursor: pointer; font-size: 11px; font-weight: bold;
+        }
+        .count-btn.active { background: var(--primary); color: black; border-color: var(--primary); }
+
+        .shop-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; }
 
         .pack-card {
-            width: 130px; height: 180px;
-            border-radius: 10px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; cursor: pointer;
-            border: 3px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            position: relative; transition: transform 0.1s; margin-bottom: 10px;
+            background: #222; border-radius: 12px; padding: 15px 5px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; border: 2px solid #444; position: relative;
+            transition: transform 0.1s; height: 130px;
         }
         .pack-card:active { transform: scale(0.95); }
-
-        .pack-normal { background: linear-gradient(135deg, #6e8efb, #a777e3); }
-        .pack-rare { background: linear-gradient(135deg, #f44336, #ff9800); border-color: #ffd700; }
-        .pack-epic { background: linear-gradient(135deg, #7b1fa2, #e91e63); border-color: #e040fb; }
-        .pack-legendary { background: linear-gradient(135deg, #fdd835, #f57f17); border-color: #ffff00; box-shadow: 0 0 15px #ffd700; }
-        .pack-mythic { background: linear-gradient(135deg, #d32f2f, #b71c1c); border-color: #ff0000; box-shadow: 0 0 20px #ff0000; }
         
-        /* 갓 팩 디자인 (무지개 배경) */
+        /* Pack Styles */
+        .pack-normal { border-color: var(--common-border); background: linear-gradient(135deg, #222, #1b3a1b); }
+        .pack-rare { border-color: var(--rare-border); background: linear-gradient(135deg, #222, #1b283a); }
+        .pack-epic { border-color: var(--epic-border); background: linear-gradient(135deg, #222, #2a1b3a); }
+        .pack-legendary { border-color: var(--legendary-border); background: linear-gradient(135deg, #222, #3a351b); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
+        .pack-mythic { border-color: var(--mythic-border); background: linear-gradient(135deg, #222, #3a1b1b); box-shadow: 0 0 15px rgba(255, 0, 0, 0.3); }
         .pack-god { 
-            background: #000; 
-            border: 4px solid transparent;
-            background-image: linear-gradient(#1a1a1a, #1a1a1a), linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
-            background-origin: border-box; background-clip: content-box, border-box;
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
-            animation: rainbowPack 3s linear infinite;
+            border: 3px solid transparent; 
+            background: linear-gradient(#000, #000) padding-box, linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet) border-box;
+            background-clip: padding-box, border-box;
+            box-shadow: 0 0 20px rgba(255,255,255,0.15); animation: rainbowPack 3s linear infinite;
         }
-        @keyframes rainbowPack {
-            0% { filter: hue-rotate(0deg); }
-            100% { filter: hue-rotate(360deg); }
+        .pack-secret {
+            border: 3px solid transparent;
+            background: linear-gradient(#000, #000) padding-box, 
+                        linear-gradient(180deg, #000, #000, #000, #fff, #000, #000, #000) border-box;
+            background-clip: padding-box, border-box;
+            background-size: 100% 200%;
+            animation: secretScan 2s linear infinite;
+            box-shadow: 0 0 15px rgba(255,255,255,0.1);
         }
+        .pack-og {
+            border: 3px solid transparent;
+            background: linear-gradient(#000, #000) padding-box, 
+                        linear-gradient(to bottom, #f7e500, #C9BA00, #988D00, #716900, #000) border-box;
+            background-clip: padding-box, border-box;
+            box-shadow: 0 0 20px #f7e500;
+        }
+        /* Luck Block Styles */
+        .pack-luck-god { border: 2px solid #00ffff; background: linear-gradient(135deg, #003333, #001111); box-shadow: 0 0 15px #00ffff; }
+        .pack-luck-secret { border: 2px solid #ff00ff; background: linear-gradient(135deg, #330033, #110011); box-shadow: 0 0 15px #ff00ff; }
 
-        .pack-title { font-size: 16px; font-weight: bold; color: white; text-shadow: 0 1px 2px black; margin-bottom: 5px; }
-        .pack-cost { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 15px; margin-top: 10px; color: #ffeb3b; font-size: 14px; }
+        @keyframes rainbowPack { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        @keyframes secretScan { 0% { background-position: 0% 0%; } 100% { background-position: 0% 200%; } }
 
-        .auto-toggle {
-            background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px;
-            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-            border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
-        }
-        .auto-active { background: var(--common-border); color: white; }
+        .pack-emoji { font-size: 32px; margin-bottom: 5px; }
+        .pack-img { width: 60px; height: 60px; margin-bottom: 5px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
+        .pack-title { font-size: 13px; font-weight: bold; text-align: center; }
+        .pack-cost { font-size: 11px; color: var(--primary); margin-top: 5px; background: rgba(0,0,0,0.8); padding: 3px 10px; border-radius: 10px; }
 
         #my-base {
-            height: 25%; background-color: var(--panel-color);
-            border-top: 1px solid rgba(255,255,255,0.1); padding: 10px;
+            height: 25%; min-height: 150px; background-color: #1e1e1e;
+            border-top: 2px solid #444; padding: 10px;
+            overflow-y: auto; flex-shrink: 0;
         }
-        .base-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-        .slot { aspect-ratio: 1; background: rgba(0,0,0,0.2); border-radius: 5px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .base-title { text-align: center; font-size: 12px; margin-bottom: 8px; color: #ccc; }
+        .base-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .slot { aspect-ratio: 1; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #333; }
 
-        .item-img { 
-            width: 100%; height: 100%; object-fit: contain; 
-            border-radius: 5px; background-color: rgba(0,0,0,0.2); box-sizing: border-box; 
-        }
+        .item-img { width: 100%; height: 100%; object-fit: contain; border-radius: 5px; background: rgba(0,0,0,0.3); box-sizing:border-box; }
         
-        /* 등급별 테두리 */
-        .rarity-1 { border: 2px solid var(--common-border); } 
-        .rarity-2 { border: 2px solid var(--rare-border); box-shadow: 0 0 5px var(--rare-border); } 
-        .rarity-3 { border: 3px solid var(--epic-border); box-shadow: 0 0 10px var(--epic-border); } 
-        .rarity-4 { border: 3px solid var(--legendary-border); box-shadow: 0 0 15px var(--legendary-border), inset 0 0 10px rgba(255, 215, 0, 0.5); } 
-        .rarity-5 { border: 3px solid var(--mythic-border); box-shadow: 0 0 20px var(--mythic-border), inset 0 0 15px rgba(255, 0, 0, 0.5); animation: pulseRed 1s infinite; }
-        .rarity-6 { /* 갓 등급 (무지개) */
-            border: 4px solid transparent;
-            animation: rainbowBorder 2s linear infinite;
-            box-shadow: 0 0 15px rgba(255,255,255,0.8);
-        }
+        /* Rarities */
+        .rarity-1 { border: 2px solid var(--common-border); }
+        .rarity-2 { border: 2px solid var(--rare-border); }
+        .rarity-3 { border: 2px solid var(--epic-border); box-shadow: 0 0 5px var(--epic-border); }
+        .rarity-4 { border: 2px solid var(--legendary-border); box-shadow: 0 0 8px var(--legendary-border); }
+        .rarity-5 { border: 2px solid var(--mythic-border); box-shadow: 0 0 10px var(--mythic-border); animation: pulseRed 1s infinite; }
+        .rarity-6 { border: 3px solid transparent; animation: rainbowBorder 1.5s linear infinite; box-shadow: 0 0 12px rgba(255,255,255,0.5); }
+        .rarity-8 { border: 3px solid transparent; background: linear-gradient(#000, #000) padding-box, linear-gradient(180deg, #000, #000, #000, #000, #FFF, #000, #000, #000, #000, #000) border-box; background-clip: padding-box, border-box; background-size: 100% 200%; animation: secretScan 2s linear infinite; box-shadow: 0 0 10px rgba(255,255,255,0.4); }
+        .rarity-9 { border: 4px solid transparent; background: linear-gradient(#000, #000) padding-box, conic-gradient(from 0deg, #f7e500, #b8860b, #fff, #f7e500) border-box; background-clip: padding-box, border-box; animation: ogSpin 3s linear infinite; box-shadow: 0 0 15px #f7e500; }
 
-        @keyframes rainbowBorder {
-            0% { border-color: red; box-shadow: 0 0 15px red; }
-            15% { border-color: orange; box-shadow: 0 0 15px orange; }
-            30% { border-color: yellow; box-shadow: 0 0 15px yellow; }
-            45% { border-color: green; box-shadow: 0 0 15px green; }
-            60% { border-color: blue; box-shadow: 0 0 15px blue; }
-            75% { border-color: indigo; box-shadow: 0 0 15px indigo; }
-            100% { border-color: violet; box-shadow: 0 0 15px violet; }
-        }
-        @keyframes pulseRed { 0% { box-shadow: 0 0 10px #ff0000; } 50% { box-shadow: 0 0 25px #ff0000; } 100% { box-shadow: 0 0 10px #ff0000; } }
+        @keyframes ogSpin { from { --angle: 0deg; filter: hue-rotate(0deg); } to { --angle: 360deg; filter: hue-rotate(30deg); } }
+        @keyframes rainbowBorder { 0% { border-color: red; } 20% { border-color: yellow; } 40% { border-color: green; } 60% { border-color: blue; } 80% { border-color: violet; } 100% { border-color: red; } }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 5px red; } 50% { box-shadow: 0 0 15px red; } 100% { box-shadow: 0 0 5px red; } }
 
-        /* 진화 이펙트 (레벨) */
-        .tier-gold { border-color: #ffd700 !important; }
-        .tier-diamond { border-color: #00e5ff !important; animation: sparkle 2s infinite; }
-        .tier-rainbow { border-color: white !important; animation: rainbowBorder 1s infinite; }
+        /* Modals */
+        .modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .close-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; }
         
-        .bottom-nav { display: flex; justify-content: space-around; padding: 10px; background: #333; }
-        .nav-btn { background: none; border: none; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 12px; }
-
-        .modal { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; padding: 20px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom:10px; border-bottom:1px solid #555; }
-        .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
-
-        .inventory-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; overflow-y: auto; align-content: start; height: 100%; }
-        .inv-item { background: rgba(255,255,255,0.05); border-radius: 5px; padding: 5px; display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative; height: 95px; justify-content: space-between; }
-        .inv-item img { width: 100%; height: 60px; object-fit: contain; margin-bottom: 2px; }
+        .inventory-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; overflow-y: auto; padding-bottom: 50px; }
+        .inv-item { background: #333; border-radius: 5px; padding: 4px; display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative; height: 80px; justify-content: space-between; }
+        .lvl-badge { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.8); color: white; font-size: 9px; padding: 1px 3px; border-radius: 3px; z-index: 5; }
         
-        .collection-item { opacity: 1; transition: 0.3s; }
-        .collection-item.locked img { filter: grayscale(100%) brightness(0.5); }
-        .collection-item.locked .item-name { color: #777; }
-        .lvl-badge { position: absolute; top: 2px; right: 2px; background: black; color: white; font-size: 10px; padding: 1px 4px; border-radius: 3px; z-index: 10; }
+        /* Collection Locked Fix */
+        .collection-item.locked img { filter: grayscale(100%) brightness(0.2) !important; opacity: 0.5; animation: none !important; background: #333 !important; border: 1px solid #555 !important; box-shadow: none !important; }
+        .collection-item.locked .item-name { color: #555; }
+        
+        /* Collection Tabs */
+        .collection-tabs { display: flex; gap: 5px; margin-bottom: 10px; justify-content: center; flex-wrap: wrap; }
+        .tab-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 5px 10px; border-radius: 15px; cursor: pointer; font-size: 11px; }
+        .tab-btn.active { background: var(--primary); color: black; border-color: var(--primary); font-weight: bold; }
 
-        #item-action-menu { position: absolute; bottom: 0; left: 0; right: 0; background: #222; border-top: 2px solid var(--primary); padding: 20px; display: none; flex-direction: column; gap: 10px; z-index: 150; }
-        .action-btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-equip { background: var(--primary); color: black; }
-        .btn-battle { background: #f44336; color: white; }
-        .btn-sell { background: #4caf50; color: white; }
-        .btn-cancel { background: #555; color: white; }
-
-        #battle-view { text-align: center; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-        .battle-stage { width: 100%; height: 200px; position: relative; margin-bottom: 20px; }
-        .fighter { width: 120px; height: 120px; position: absolute; bottom: 20px; object-fit: contain; transition: transform 0.2s; filter: drop-shadow(0 0 5px black); }
-        .fighter.player { left: 10px; }
-        .fighter.enemy { right: 10px; filter: grayscale(0.5) hue-rotate(30deg) drop-shadow(0 0 5px black); }
-        .hp-bar { width: 100%; height: 10px; background: #555; margin-top: 5px; }
-        .hp-fill { height: 100%; background: #f44336; width: 100%; transition: width 0.2s; }
-
-        #gacha-anim { display: none; position: absolute; top:0; left:0; right:0; bottom:0; background:black; z-index:200; flex-direction:column; align-items:center; justify-content:center; }
-        .anim-box { width: 100px; height: 100px; font-size: 50px; display: flex; align-items: center; justify-content: center; animation: shake 0.5s infinite; }
-        #result-img { width: 200px; height: 200px; object-fit: contain; background-color: rgba(255,255,255,0.1); border-radius: 15px; margin-bottom: 15px; }
+        /* Gacha */
+        #gacha-anim { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 200; flex-direction: column; align-items: center; justify-content: center; }
+        .gacha-box { font-size: 80px; animation: shake 0.5s infinite; }
+        #gacha-results-container { display: none; flex-direction: column; align-items: center; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; }
+        .result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; width: 100%; overflow-y: auto; max-height: 75vh; margin-bottom: 15px; }
+        .result-card { background: #222; padding: 8px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; border: 1px solid #444; }
         @keyframes shake { 0%{transform:rotate(0deg);} 25%{transform:rotate(5deg);} 75%{transform:rotate(-5deg);} }
+
+        #item-action-menu { position: absolute; bottom: 0; left: 0; right: 0; background: #222; border-top: 2px solid var(--primary); padding: 20px; display: none; flex-direction: column; gap: 10px; z-index: 150; border-top-left-radius: 15px; border-top-right-radius: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); }
+        .action-btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; width: 100%; }
+        .btn-green { background: var(--common-border); color: white; }
+        .btn-red { background: #f44336; color: white; }
+        .btn-yellow { background: var(--primary); color: black; }
+        .btn-pink { background: #e91e63; color: white; }
+        .btn-rebirth { background: linear-gradient(45deg, #00c6ff, #0072ff); color: white; box-shadow: 0 0 10px #0072ff; }
+
+        /* Fusion & Ritual */
+        #fusion-container { display: flex; flex-direction: column; align-items: center; width: 100%; background: #252525; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #444; }
+        #fusion-slots { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; padding: 10px; }
+        .fusion-slot { width: 50px; height: 50px; background: #333; border: 2px dashed #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+        .fusion-slot.filled { border: 2px solid #e91e63; }
+        
+        #ritual-container { display: flex; flex-direction: column; align-items: center; width: 100%; background: #2a1b3a; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #9c27b0; }
+        #ritual-slots { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; padding: 10px; }
+        .ritual-slot { width: 50px; height: 50px; background: #333; border: 2px dashed #9c27b0; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+        .ritual-slot.filled { border: 2px solid #ffeb3b; box-shadow: 0 0 10px #ffeb3b; }
+
+        /* Battle */
+        #battle-view { text-align: center; display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .battle-stage { width: 100%; height: 250px; position: relative; margin-bottom: 20px; }
+        .fighter { width: 120px; height: 120px; position: absolute; bottom: 20px; object-fit: contain; }
+        .fighter.player { left: 20px; }
+        .fighter.enemy { right: 20px; transform: scaleX(-1); filter: hue-rotate(180deg); }
+        .hp-bar { width: 80%; height: 15px; background: #444; border-radius: 10px; overflow: hidden; margin-top: 10px; border: 1px solid #666; }
+        .hp-fill { width: 100%; height: 100%; background: #f44336; transition: width 0.2s; }
+
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .lang-btn { padding: 12px; border: 1px solid #555; background: #333; color: white; cursor: pointer; border-radius: 5px; font-size: 14px; }
+        
+        /* Factory Modal Specific */
+        #factory-floor {
+            width: 100%; height: 200px; background: #000; 
+            border: 2px solid #555; border-radius: 10px; 
+            position: relative; overflow: hidden; margin-bottom: 15px;
+            background-image: url('https://img.freepik.com/free-vector/factory-interior-background-illustration_1284-6997.jpg');
+            background-size: cover; background-position: center;
+        }
+        .factory-mob {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 100px; height: 100px; cursor: pointer;
+            animation: bounce 1s infinite;
+            filter: drop-shadow(0 0 10px red);
+        }
+        @keyframes bounce { 0%,100% {transform:translateX(-50%) translateY(0);} 50% {transform:translateX(-50%) translateY(-10px);} }
+        .rebirth-panel { background: #333; padding: 10px; border-radius: 10px; margin-bottom: 15px; text-align: center; border: 1px solid #00c6ff; width: 100%; }
 
     </style>
 </head>
-<body data-theme="default">
+<body>
 
 <div id="game-container">
     <header>
         <div class="header-top">
-            <div id="game-title">스틸어 브레인롯 V13</div>
+            <div id="game-title">스틸어 브레인롯 V25 (Fusion Fix)</div>
             <div class="top-menu">
-                <button class="icon-btn" onclick="openModal('collection-modal')" title="도감">📖</button>
-                <button class="icon-btn" onclick="openModal('settings-modal')" title="설정">⚙️</button>
+                <button class="icon-btn luck-btn" onclick="openModal('luck-shop-modal')">🍀</button>
+                <button class="icon-btn factory-btn" onclick="openFactoryModal()">🏭</button>
+                <button class="icon-btn" onclick="openModal('inventory-modal')">📦</button>
+                <button class="icon-btn" onclick="openModal('battle-modal')">⚔️</button>
+                <button class="icon-btn" onclick="openModal('collection-modal')">📖</button>
+                <button class="icon-btn" onclick="openModal('settings-modal')">⚙️</button>
             </div>
         </div>
-        <div class="money-display"><span id="money">500</span>₩</div>
-        <div class="eps-display">+<span id="eps">0</span>/s</div>
+        <div class="status-bar">
+            <div class="money-container">
+                <div class="money-display"><span id="money">0</span> ₩</div>
+                <div class="rebirth-display">Mult: x<span id="rebirth-mult">1.0</span></div>
+            </div>
+            <div class="eps-display">+<span id="eps">0</span> /s</div>
+        </div>
     </header>
 
     <div id="lobby">
-        <div class="auto-toggle" id="auto-btn" onclick="toggleAuto()">
-            <span>🤖 자동 뽑기</span> <span id="auto-status">OFF</span>
+        <div class="draw-count-selector">
+            <button class="count-btn active" onclick="setDrawCount(1)">x1</button>
+            <button class="count-btn" onclick="setDrawCount(3)">x3</button>
+            <button class="count-btn" onclick="setDrawCount(5)">x5</button>
+            <button class="count-btn" onclick="setDrawCount(10)">x10</button>
+            <button class="count-btn" onclick="setDrawCount(100)">x100</button>
         </div>
 
-        <div class="shop-row">
+        <div class="shop-grid">
             <div class="pack-card pack-normal" onclick="buyPack('normal')">
-                <div class="pack-title">일반 팩</div>
-                <div style="font-size:30px;">🎁</div>
+                <div class="pack-emoji">🎁</div>
+                <div class="pack-title" data-lang="pack_normal">일반 팩</div>
                 <div class="pack-cost">10 ₩</div>
             </div>
             <div class="pack-card pack-rare" onclick="buyPack('rare')">
-                <div class="pack-title">레어 팩</div>
-                <div style="font-size:30px;">💎</div>
+                <div class="pack-emoji">💎</div>
+                <div class="pack-title" data-lang="pack_rare">레어 팩</div>
                 <div class="pack-cost">500 ₩</div>
             </div>
             <div class="pack-card pack-epic" onclick="buyPack('epic')">
-                <div class="pack-title">에픽 팩</div>
-                <div style="font-size:30px;">🔮</div>
-                <div class="pack-cost">1000 ₩</div>
+                <div class="pack-emoji">🔮</div>
+                <div class="pack-title" data-lang="pack_epic">에픽 팩</div>
+                <div class="pack-cost">1K ₩</div>
             </div>
             <div class="pack-card pack-legendary" onclick="buyPack('legendary')">
-                <div class="pack-title">전설 팩</div>
-                <div style="font-size:30px;">👑</div>
-                <div class="pack-cost">5000 ₩</div>
+                <div class="pack-emoji">👑</div>
+                <div class="pack-title" data-lang="pack_legendary">전설 팩</div>
+                <div class="pack-cost">5K ₩</div>
             </div>
             <div class="pack-card pack-mythic" onclick="buyPack('mythic')">
-                <div class="pack-title">신화 팩</div>
-                <div style="font-size:30px;">👹</div>
+                <div class="pack-emoji">👹</div>
+                <div class="pack-title" data-lang="pack_mythic">신화 팩</div>
                 <div class="pack-cost">50K ₩</div>
             </div>
             <div class="pack-card pack-god" onclick="buyPack('god')">
-                <div class="pack-title">갓 팩</div>
-                <div style="font-size:30px;">🌌</div>
+                <div class="pack-emoji">🌌</div>
+                <div class="pack-title" data-lang="pack_god">갓 팩</div>
                 <div class="pack-cost">2M ₩</div>
             </div>
+            <div class="pack-card pack-secret" onclick="buyPack('secret')">
+                <div class="pack-emoji">❓</div>
+                <div class="pack-title" data-lang="pack_secret">시크릿 팩</div>
+                <div class="pack-cost">50M ₩</div>
+            </div>
+            <div class="pack-card pack-og" onclick="buyPack('og')">
+                <div class="pack-emoji">⚜️</div>
+                <div class="pack-title">OG 팩</div>
+                <div class="pack-cost">1B ₩</div>
+            </div>
         </div>
-        <div style="text-align:center; font-size:12px; color:#888; padding:0 20px;">
-            신규 갓 등급 7종 추가!<br>총 13종의 갓 캐릭터 (무지개 테두리)
+    </div>
+
+    <!-- Lucky Block Shop Modal (New) -->
+    <div id="luck-shop-modal" class="modal">
+        <div class="modal-header">
+            <h3 style="color:#00ffff">🍀 럭키블럭 상점</h3>
+            <button class="close-btn" onclick="closeModal('luck-shop-modal')">×</button>
+        </div>
+        <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center;">
+            <div class="draw-count-selector">
+                <button class="count-btn active" onclick="setDrawCount(1)">x1</button>
+                <button class="count-btn" onclick="setDrawCount(3)">x3</button>
+                <button class="count-btn" onclick="setDrawCount(5)">x5</button>
+            </div>
+            <div class="shop-grid">
+                <div class="pack-card pack-luck-god" onclick="buyPack('luck_god')">
+                    <img src="https://i.namu.wiki/i/gVJF67WTIgK0llkTSlLVL7A0C7Mf-L0jEES6_ieCs_CpCSabviFve0aYS07Fe1M6GQXI2tfHfAhdMW5EgsvRhtAHTpSabDM02FliroHeMM9kSwTPnTYyQa_JTms_5fP_Zy_1Xl1rlecRDMnlnWak8g.webp" class="pack-img" style="width:70px; height:70px;">
+                    <div class="pack-title">갓 럭키블럭</div>
+                    <div class="pack-cost">500K ₩</div>
+                </div>
+                <div class="pack-card pack-luck-secret" onclick="buyPack('luck_secret')">
+                    <img src="https://i.namu.wiki/i/bpALgQ99Hc64sXWjlPjse3dS_Mw37Am-HaGGyHHdLxZUky4oUNNrL51065PiekfrhcTOWd2jtntpstWaDu8mLWq8v2j8l4tCU7i7-EmWqtLpKxbEUIOF_fShpziWSkkwnuIhTusLWODvUsVO3X5xGA.webp" class="pack-img">
+                    <div class="pack-title">시크릿 럭키블럭</div>
+                    <div class="pack-cost">100M ₩</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div id="my-base">
-        <div style="text-align:center; font-size:12px; margin-bottom:5px;">나의 베이스 (<span id="base-count">0</span>/10)</div>
+        <div class="base-title"><span data-lang="base_title">나의 베이스</span> (<span id="base-count">0</span>/50)</div>
         <div class="base-grid" id="base-grid"></div>
     </div>
 
-    <div class="bottom-nav">
-        <button class="nav-btn" onclick="showLobby()"><span style="font-size:20px;">🏠</span>로비</button>
-        <button class="nav-btn" onclick="openModal('battle-modal')"><span style="font-size:20px;">⚔️</span>배틀</button>
-        <button class="nav-btn" onclick="openModal('inventory-modal')"><span style="font-size:20px;">📦</span>인벤</button>
+    <!-- Factory Modal (Rebirth + Fusion + Roaming) -->
+    <div id="factory-modal" class="modal">
+        <div class="modal-header">
+            <h3 style="color:#ff9800">🏭 브레인롯 공장</h3>
+            <button class="close-btn" onclick="closeModal('factory-modal')">×</button>
+        </div>
+        <div style="flex:1; overflow-y:auto; width:100%; display:flex; flex-direction:column; align-items:center;">
+            
+            <!-- Factory Floor -->
+            <div id="factory-floor">
+                <div style="position:absolute; top:5px; left:5px; color:white; font-size:10px; background:rgba(0,0,0,0.5); padding:3px;">
+                    ⚠️ 야생의 브레인롯 출몰 구역<br>(클릭하여 배틀)
+                </div>
+                <div id="factory-mob-container"></div>
+            </div>
+
+            <!-- Rebirth System -->
+            <div class="rebirth-panel">
+                <h4 style="margin:0 0 5px 0; color:#00c6ff;">환생 시스템 (Rebirth)</h4>
+                <div style="font-size:11px; margin-bottom:5px;">현재 배율: x<span id="factory-rebirth-mult">1.0</span></div>
+                <button class="action-btn btn-rebirth" onclick="doRebirth()" style="font-size:12px; padding:8px;">환생하기 (조건: 100M ₩)</button>
+            </div>
+
+            <!-- Ritual System -->
+            <div id="ritual-container">
+                <h4 style="margin:0 0 5px 0; color:#9c27b0;">🕯️ 의식의 제단 (Ritual)</h4>
+                <div class="fusion-info" style="font-size:10px; color:#ddd; text-align:center;">'봄바르 디로 크로코 디로' 3마리를 바쳐 소환</div>
+                <div id="ritual-slots">
+                    <div class="ritual-slot" id="r-slot-0" onclick="removeRitualItem(0)"></div>
+                    <div class="ritual-slot" id="r-slot-1" onclick="removeRitualItem(1)"></div>
+                    <div class="ritual-slot" id="r-slot-2" onclick="removeRitualItem(2)"></div>
+                </div>
+                <button id="btn-ritual-start" class="action-btn" style="background:#333; color:#555; font-size:12px; padding:8px;" disabled onclick="startRitual()">의식 시작</button>
+            </div>
+
+            <!-- Fusion System -->
+            <div id="fusion-container">
+                <h4 style="margin:0 0 5px 0; color:#e91e63;">🧬 퓨즈 머신</h4>
+                <div class="fusion-info">재료 4개를 선택하세요 (가치가 높을수록 좋음)</div>
+                <div id="fusion-slots">
+                    <div class="fusion-slot" id="f-slot-0" onclick="removeFusionItem(0)"></div>
+                    <div class="fusion-slot" id="f-slot-1" onclick="removeFusionItem(1)"></div>
+                    <div class="fusion-slot" id="f-slot-2" onclick="removeFusionItem(2)"></div>
+                    <div class="fusion-slot" id="f-slot-3" onclick="removeFusionItem(3)"></div>
+                </div>
+                <button id="btn-fuse-start" class="action-btn" style="background:#333; color:#555; font-size:12px; padding:8px;" disabled onclick="startFusion()">퓨즈 시작</button>
+            </div>
+            
+            <div style="width:100%;">
+                <h5 style="color:#ccc; margin:5px 0; text-align:center;">인벤토리 (재료 선택)</h5>
+                <div class="inventory-list" id="fusion-inventory-list" style="height:150px;"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- 모달들 -->
+    <!-- Inventory -->
     <div id="inventory-modal" class="modal">
-        <div class="modal-header"><h3>인벤토리</h3><button class="close-btn" onclick="closeModal('inventory-modal')">×</button></div>
+        <div class="modal-header">
+            <h3 data-lang="inventory">인벤토리</h3>
+            <button class="close-btn" onclick="closeModal('inventory-modal')">×</button>
+        </div>
         <div class="inventory-list" id="inventory-list"></div>
         <div id="item-action-menu">
             <div id="selected-item-info" style="text-align:center; color:white; margin-bottom:10px;"></div>
-            <button class="action-btn btn-equip" onclick="actionEquip()">장착하기</button>
-            <button class="action-btn btn-battle" onclick="actionBattleStart()">배틀하기 (XP획득)</button>
-            <button class="action-btn btn-sell" onclick="actionSell()">판매하기 (+<span id="sell-price">0</span>₩)</button>
-            <button class="action-btn btn-cancel" onclick="closeActionMenu()">취소</button>
+            <button class="action-btn btn-green" onclick="actionEquip()" data-lang="equip">장착하기</button>
+            <button class="action-btn btn-red" onclick="actionBattleStart()" data-lang="battle_start">배틀하기 (XP)</button>
+            <button class="action-btn btn-yellow" onclick="actionSell()"><span data-lang="sell">판매</span> (<span id="sell-price">0</span>₩)</button>
+            <button class="action-btn" onclick="closeActionMenu()" style="background:#555; color:white;" data-lang="cancel">취소</button>
         </div>
     </div>
+
+    <!-- Collection -->
     <div id="collection-modal" class="modal">
-        <div class="modal-header"><h3>도감</h3><button class="close-btn" onclick="closeModal('collection-modal')">×</button></div>
+        <div class="modal-header">
+            <h3 data-lang="collection">도감</h3>
+            <button class="close-btn" onclick="closeModal('collection-modal')">×</button>
+        </div>
+        <div class="collection-tabs">
+            <button class="tab-btn active" onclick="setCollectionTab('all')">전체</button>
+            <button class="tab-btn" onclick="setCollectionTab('standard')">일반</button>
+            <button class="tab-btn" onclick="setCollectionTab('fusion')">퓨전</button>
+            <button class="tab-btn" onclick="setCollectionTab('ritual')">의식</button>
+            <button class="tab-btn" onclick="setCollectionTab('luck')">럭키블럭</button>
+        </div>
         <div class="inventory-list" id="collection-list"></div>
     </div>
+
+    <!-- Battle -->
     <div id="battle-modal" class="modal">
-        <div class="modal-header"><h3>배틀 아레나</h3><button class="close-btn" onclick="closeModal('battle-modal')">×</button></div>
+        <div class="modal-header">
+            <h3 data-lang="battle">배틀 아레나</h3>
+            <button class="close-btn" onclick="closeModal('battle-modal')">×</button>
+        </div>
         <div id="battle-lobby" style="text-align:center; padding-top:50px;">
-            <p>캐릭터를 선택하여 배틀!</p>
-            <button class="action-btn btn-equip" onclick="openModal('inventory-modal'); closeModal('battle-modal');">캐릭터 선택</button>
+            <p data-lang="battle_desc">인벤토리에서 캐릭터를 선택하세요!</p>
+            <button class="action-btn btn-green" onclick="openModal('inventory-modal'); closeModal('battle-modal');" data-lang="select_char">캐릭터 선택</button>
         </div>
         <div id="battle-view">
-            <h2 id="battle-msg" style="color:#f44336;">전투 시작!</h2>
-            <div class="battle-stage"><img id="battle-player" class="fighter player"><img id="battle-enemy" class="fighter enemy"></div>
-            <div style="width:80%;"><div>Enemy HP</div><div class="hp-bar"><div id="enemy-hp" class="hp-fill"></div></div></div>
+            <h2 id="battle-msg" style="color:#f44336;">FIGHT!</h2>
+            <div class="battle-stage">
+                <img id="battle-player" class="fighter player">
+                <img id="battle-enemy" class="fighter enemy">
+            </div>
+            <div style="width:80%;">
+                <div>Enemy HP</div>
+                <div class="hp-bar"><div id="enemy-hp" class="hp-fill"></div></div>
+            </div>
         </div>
     </div>
+
+    <!-- Settings -->
     <div id="settings-modal" class="modal">
-        <div class="modal-header"><h3>설정</h3><button class="close-btn" onclick="closeModal('settings-modal')">×</button></div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <button class="action-btn" style="background:#000;" onclick="setTheme('default')">기본</button>
-            <button class="action-btn" style="background:#fff; color:black;" onclick="setTheme('white')">화이트</button>
-            <button class="action-btn" style="background:#b71c1c;" onclick="setTheme('red')">레드</button>
-            <button class="action-btn" style="background:#0d47a1;" onclick="setTheme('blue')">블루</button>
+        <div class="modal-header">
+            <h3 data-lang="settings">설정</h3>
+            <button class="close-btn" onclick="closeModal('settings-modal')">×</button>
+        </div>
+        
+        <h4 style="margin-bottom:10px; color:#aaa;">Language</h4>
+        <div class="settings-grid">
+            <button class="lang-btn" onclick="setLanguage('ko')">한국어</button>
+            <button class="lang-btn" onclick="setLanguage('en')">English</button>
+            <button class="lang-btn" onclick="setLanguage('ja')">日本語</button>
+        </div>
+
+        <div style="margin-top:20px;">
+            <button class="action-btn btn-red" onclick="resetData()" style="width:100%;">초기화 / Reset</button>
         </div>
     </div>
+
+    <!-- Gacha Result -->
     <div id="gacha-anim">
-        <div class="anim-box">📦</div>
-        <div id="gacha-result" style="display:none; text-align:center; color:white;">
-            <h2 style="color:yellow;">GET!</h2>
-            <img id="result-img">
-            <h3 id="result-name">Name</h3>
-            <p id="result-stat"></p>
+        <div class="gacha-box">📦</div>
+        <div id="gacha-results-container">
+            <h2 style="color:var(--primary); margin-bottom:10px;" data-lang="gacha_result">결과</h2>
+            <div class="result-grid" id="result-grid"></div>
+            <button class="action-btn btn-green" onclick="closeGacha()" style="width:100%; max-width:200px;">OK</button>
         </div>
     </div>
+
 </div>
 
 <script>
-    // --- 데이터베이스 ---
     const DB = [
         // Common (Rarity 1)
         { id: 4, name: "강탈자 프테라", val: 30, rarity: 1, img: "https://i.namu.wiki/i/S6GH5Htxp89QbGsicC-uabEArjuFZuhOxVyoRcKblcP3wL08AIpryqnV7cnNvk3VILkjs0MqHXJ1ZyHfKfT0kT6gYhwYAtl0wKVvYe77YNCzv5O75me17wI9ejDC-uWNqMrRBZdBq_fIIuGXnMNkRA.webp" },
@@ -311,7 +501,7 @@
         { id: 12, name: "타타타 사후르", val: 55, rarity: 1, img: "https://i.namu.wiki/i/uJ8cuQb_nnSy9hWbiIK89PaydY-cREU5uSA6zDrhenVGBi1kMBxBiQg4bnVzOLaBOzKKeQQqaa0rcuoMnB7gsVbAZaFbUNTOXCKNpOmjFkNv47oNXsISqp6yY1s-VEOUADgGN3yTwpvo_LwNQ2oKCw.webp" },
         { id: 13, name: "트릭부락 바라붐", val: 65, rarity: 1, img: "https://i.namu.wiki/i/AzkLdKiPJpyu_rdmlUayXbbeCFz3eS9C7edYItIDLLoZLZ5wtyf3ivTUqVQ_ePYX2Vtg5aAIQ3mAsytatUxIgqQrItDVGUqesR2to9I3bUqnxE1_qhR97n-6rthb32V1n4U1h9Hc8rnTwenmXuakmw.webp" },
 
-        // Rare (Rarity 2)
+        // Rare (2)
         { id: 0, name: "누비니 피자니니", val: 1, rarity: 2, img: "https://i.namu.wiki/i/2TPAcGkYR-OCMgvKMurRodCfzPmZZIORq50mhKZ-P9czgmON4GVsGmbYmbw5jeosqfhbBqEmbkprwFaJP9XKsUJlzUqhknxIzegnfFhNGwAlWG9O1ON6Ha_cc6064kILj0MXQFj1D5eHymZ0Gl3ThQ.webp" },
         { id: 1, name: "리릴리 라릴라", val: 3, rarity: 2, img: "https://i.namu.wiki/i/o2TIDVPkV8APQs6_azvWaZIQgARRnaWYgtq2y7RoRATkfIgQAngSpUC68SmTPnGAiqpkaIdSZJpJTr4gBLMdJglSfBS0ChAjuHueVfw6ynCFbWkov1HbPuObJNZharc3aoNk9kCmdXYy8oyTlPZZDQ.webp" },
         { id: 2, name: "팀 치즈", val: 5, rarity: 2, img: "https://i.namu.wiki/i/GSd6Tw8GxlFT3f1hPBc64RIF_rjpIkp-Czm3tmgxpXjM1YlS1cqTPXjJggbVcEI_Rt-FwuQTVVo5Q5ZA5Bbqr01hqGo-9xce6CWumCjMTdvLn9XvAy_aUeUcxXHV5b4Z5z-R89MOKWQxI1D3kE0EaA.webp" },
@@ -320,7 +510,7 @@
         { id: 7, name: "스비니나 봄바르", val: 10, rarity: 2, img: "https://i.namu.wiki/i/70fYy97CIqXrZYDzgZNv9iQtO6LM8YzPRec79WKQ9PNPxjGeNFQQ0OTzQjlo0WJopkuTh2oNT6zmm40zI4FAld8E90z9LcBnCEP9FmfDMoZbQNJiyTqkMuidhEujnGTRa6WebY0uknvBAdFuqObgrw.webp" },
         { id: 8, name: "피피 키위", val: 13, rarity: 2, img: "https://i.namu.wiki/i/zDv0SzOJaSqbDLXDx8vsQDvcbcF3luF6k00VT9NNBfCzkAc-HgwgTDNmNedAbt92s16M0YwwDEq7RuM6EzI9njrC8xEklirxEeqEYlsKMMWeBjTNIEE4LXzLOK3dU7dpkVFXD0HPZSeLyqRJAgVVBA.webp" },
 
-        // Epic (Rarity 3)
+        // Epic (3)
         { id: 14, name: "카푸치노 아사시노", val: 75, rarity: 3, img: "https://i.namu.wiki/i/E3rk2GsDkrbl5P5nNFjIY4iqIzTOaDrcbtDRpl1L0t_aFzdHzKcyhUCwxD-H14gLp1YVTwdLhiyLM9ZDwRpmAni9hLZaS0D7UOKtpzhPguDJMWZ8gGtwdQMy5U0NyHavEQDEem7mgYZs5Bi1fFBHJw.webp" },
         { id: 15, name: "브르르브르르 파타핌", val: 100, rarity: 3, img: "https://i.namu.wiki/i/t_YbZv2DsfHunbrdaA9vg9ferAYJLWp36uEIwARkPZtLvWTFgXxJ1F7-tAqe2tdDqyg7YSqnuoyA7g-ICh_hPG2HWfR4jkYDNAhRK_gyRH77_2eT-I5-0e5wqeud2ovAiAyboW2x58Lb-AxvzMT5SQ.webp" },
         { id: 16, name: "아보카도 인펠로니", val: 115, rarity: 3, img: "https://i.namu.wiki/i/sdzSd3LJiE0RXB_b-ut7Xv84mpHt04WIGQPiudgw5DYEyC3q_-pdM4NHEqS6ub1fPYiIoBSLnCyOdUskQgRwLd8dam3mBnBeqZ45mxWYqgLsv--9puOEgXFeXmxipbfUlnODMKtpNcO8e9OCH_AVbw.webp" },
@@ -333,7 +523,7 @@
         { id: 23, name: "살라위노 펭구위노", val: 250, rarity: 3, img: "https://i.namu.wiki/i/VrKJQEcDbiv8iL1oYrN04VZPzPg5CUuSBXMze1ICFxfeICtZATs0tMdUuUfVlVdFxEkti4TUOgBhdWxcomPLC0Cx4QLRDPB72sYNgv8Fzmpu8ZW6Yw2XDBKlyE1XQkzHuEyzn8EXjJeenRP_ZscwKw.webp" },
         { id: 24, name: "웜보롤로", val: 275, rarity: 3, img: "https://i.namu.wiki/i/gqj4uvTfmLWWoba4-LPqnZsytdsYrQlmplyi_2aGHzpz5RAHVSGDjSKp2Vnv7K_gmiyzL5ljOuXJj60mbMmJTqOqLVzAxofOXLmzx2W2348VK98nEuCIT1cx3DoeSjsV6eqDvBlvUpqbIpgNJC7OTg.webp" },
 
-        // Legendary (Rarity 4)
+        // Legendary (4)
         { id: 25, name: "브르발롤리 롤리롤리", val: 225, rarity: 4, img: "https://i.namu.wiki/i/pDnklO1zHhHgWxknp_hBapGiuj6Vp1KwdllCe4TlhJ8WjLsQHBio4skkvLdh1wI2krK3fi_QSlqY_KCDEO5bwnyEo8biow1HbF6_Y6C-GHoAzjmWaPEEVZ26LNzp4r6SZJlQzGAwUnJL4BSgQRR4Hg.webp" },
         { id: 26, name: "침판치니 바나니니", val: 225, rarity: 4, img: "https://i.namu.wiki/i/IuN4WsDgI1ny2zKIwrLaDYJBpYvnnbDpfh7VAqAy6SolmvspE6Wf1LNheXh5B1QVXjalqZs6MyFleb_-rOPuM9wmiKpTKI0rrncsbxu_hPiGQctUh_Fmqc8qm4X771Jdz7G12oEJdbf9BrCMIUeaHQ.webp" },
         { id: 27, name: "발레리나 카푸치나", val: 300, rarity: 4, img: "https://i.namu.wiki/i/mAsRA5d-44d_J6r0dGY37FEMqm6sf6ukuM3S_UUi4DzfMG0i7lI7mBMSqS0KPVPWGj4rfHt1JR9RLdWelQrVS2r8XUjc_8HctS2UVXiS0jQ80HbEUNeaDfp9UQweeGyhHmI8LKehBNN9-WoBYHxCgw.webp" },
@@ -346,8 +536,12 @@
         { id: 34, name: "스투로 베리니 플라밍고", val: 1300, rarity: 4, img: "https://i.namu.wiki/i/rhFOL2E0tRV75uivYZerrH0N_AXP5rpOssZHd4cGht5RZWJu3dXMZ0-pbkbke718x2b9XdRU8RYkn52kynWXujysH8LCrpz0AFZCpiqeqA2N6YnLlfF-G8iMupzrgsWOno9SuaP0e9LaNuggLTPIbQ.webp" },
         { id: 35, name: "판다치니 바나니니", val: 1600, rarity: 4, img: "https://i.namu.wiki/i/P6Y51LlYYsQtT-uqL6KqVDNSFl7vnCMjS4WrqIWv5SWX5Ujk7SUlRIklU0ZZqwuDzagu0b-LBq3OJ_k8SRP6eF6Dj4iM012gSEwJaGlimzzo80nBGJD1FEGJdc0LAQKCPakh5tYzKTJyP_9D0gGiWA.webp" },
         { id: 36, name: "시그마 보이", val: 1250, rarity: 4, img: "https://i.namu.wiki/i/UiA742TtaMbuaRzCWUAILNPjLRLMoouJDtO5wDU3VO4YYT6thiq7sLb1OwfkcUJJMULWQtVT7t05Q0RMOhpv92rjtEVyZfT4dsfDwPW_ZS__EgX9cVG5kvmjs3kHcZZpgUQ5pZsnh6I5ke7nlfmBlw.webp" },
+        { id: 200, name: "피피 아보카도", val: 70, rarity: 4, isFusion: true, img: "https://i.namu.wiki/i/T-znPeVEZu_qo68FldA317aLENa3KUb0kdcQ5dWcaBkLSIDSW-uy5IkuMy-dnEnMrsPV3MhF66DyGVdPRacN_qtXgMKp-3qfY6xGzK7Z1wo2BrpJicaOE6Z3vSmWODY3dxgMYnMtGjIB-UxT71qSsw.webp" },
+        { id: 201, name: "티티티 사후르", val: 225, rarity: 4, isFusion: true, img: "https://i.namu.wiki/i/ktjMfEbDVjejSrNUrpqFm4DggATId4tqR6y5TjtW2V8NLU0l5Uyt4pppOD2TReffhG8Pto5W8aF0_NYSQY6KxOhHKDXCMNtZo3n_WYJjwaIVfP6PevoGS1haHt1ck0_ALGBMTxTxRiu8ZVRvS6XwBQ.webp" },
+        { id: 202, name: "펭구 위노 코코 시노", val: 300, rarity: 4, isFusion: true, img: "https://i.namu.wiki/i/9t0IJ2WkcKroSY1frrOI90BJP5Cgt9SF52XbMbS6B2eZHEf8FS7PjvzXdBV65fDOIOLHmUIO2twgxlMKNHRIFxMzIApOzi34awtAomwIJ6E7hJeH0iNwi-ZPS2ultg9tYlM3do1GFD4rwAf3-dWXVw.webp" },
+        { id: 203, name: "코코 시니 마마", val: 8500, rarity: 4, isFusion: true, img: "https://i.namu.wiki/i/XgAnddFjYcm5m2ygSgZgnGYCgf0Nemd3qdKLTfWvtNLK5r8u1vAf0Bb2Vh2gyPtDFyjplSsbBiVwSG75KIeugg.webp" },
 
-        // Mythic (Rarity 5)
+        // Mythic (5)
         { id: 37, name: "프리고 카멜로", val: 1100, rarity: 5, img: "https://i.namu.wiki/i/P2evI_2qviMpSpKHROEoqapUAYwJ3Ka6s01503zNLW-49_k_35BsoEZSsSyqYTl5HVipQMQc2oWHgQIm6eFJE1Nu46BXUpseHpbaOkA_hl0E_LiQdlAQidl-YbbT0qDJcWBoMr3CcisEtiHfgyLxPA.webp" },
         { id: 38, name: "오랑구 티니 아나나 시니", val: 2000, rarity: 5, img: "https://i.namu.wiki/i/GZb1CqFzXc5wMSY-hxzziv4T1PUfghVEYvGn6DWtxVW9bWw3RDzP9GoW0LFINY4QB2h2IsJJrshfENN1l2757ATFSDvjui8HmEk6peDuopq6qa3zvSChSeuppcAvOrwiy7OdW7c8DTLS_vgx4macIQ.webp" },
         { id: 39, name: "라이노 토스텔 리노", val: 2150, rarity: 5, img: "https://i.namu.wiki/i/Qar0_wwbImGqHtcHRjnHdVd3W9E95i6OQ1hfD0DCfuLNbe8U5QkKb-a-ykUVqyd-3-TKnhJJfzH1mCkEfnHj8NnXr292-vaMG0jDCM59O1VWAvfuzbL-BBKUGl_VVmgUKIxe7u-R0-xbtSRP_IzvtQ.webp" },
@@ -360,11 +554,41 @@
         { id: 46, name: "트래코툴루 델라펠라두스투즈", val: 12000, rarity: 5, img: "https://i.namu.wiki/i/IzSidggkryf7ZYH4PYz2jz9LnZtV_diXr6AxKOHXjLnp0JfinXj5RN70mP50DtjO0LLk58QxPZY-00rvhkfq65Y-L_jI6Er8y0BhqURV5PaXj6Yjc7WgaVxUyXDVMF1zneil1JcWskjLMwyd9ynpWg.webp" },
         { id: 47, name: "카코리토 멜로니토", val: 13000, rarity: 5, img: "https://i.namu.wiki/i/rneIZ3uGzl09xVPUnzG1yrQhCj8Pa5FnHxZFrE0Kj0ho5ezhCVxjD5PZKCy1JVNhLmPYRkfy1rQc56iTVSOj9NsMrd5QsKZ_LVPAQDN2kQbsGSmuVDqB6ojD6xIXlOGLSMkdRdI2Rlp3mfdnvOQBdA.webp" },
         { id: 48, name: "토일레토 포카치노", val: 16000, rarity: 5, img: "https://i.namu.wiki/i/Jf3Z4jQZWnuiyzEmhBTjkbGLr5YVzfeorAUhZK51jI1kmLP89ieQir1JN-kBBVXm1n7BUlAegLpWD5Ltl9xrQDd3TXXihD80J8_P1WHux_5-A5-0XJC01aobglOYLk49y5BDPcm_AZYz6jA6MsI7bA.webp" },
+        
+        // --- [NEW FUSION] 16 Items after Strawberry Elephant (ID 83) ---
+        // Originally Mythic/God/Secret, now Fusion Exclusive as requested
+        { id: 90, name: "마지 리비티비", val: 12000, rarity: 5, isFusion: true, img: "https://i.namu.wiki/i/Ohvsvo6TaWAnMNonfgxqzcDDA0RA-mbTWUUmXMMrwVqTr1bJxcS5gbdRcA727yia5ZKp3PnUhqmX3oKLg6J712fqDDrGbIavvxhpwivu4InjgLngAxIcLbk_ypjhm3-zmLJbJW834LIIxSvtRNkyjw.webp" },
+        { id: 91, name: "잭오 스파벤토사", val: 16200, rarity: 5, isFusion: true, img: "https://i.namu.wiki/i/Sp02iaDXzmsVgtk7ZGEHp72qWWFnLLUvptKArA8Tj5K1PiykE79JRyF4VaOcS9AmZbWojt8joylhghuMv1JhpTwlaee6ms_3O1CN-3peVdymYhdI9O1lEE40g7JaWLtXxD-8m7YQqpvPMKvcs5Wypg.webp" },
+        { id: 101, name: "스타포 루미니노", val: 8000, rarity: 5, isFusion: true, img: "https://i.namu.wiki/i/K9DZDyltY0IfKodhnOCAVuM0C00jUGlNoNQ3tgr-6jxLn_gV-YmUjWslaUt2dppLHllwbniiX2UE23rVdKfxU5FOM3mTIRGvlWLeX_iOgY5-ymARjcUUM-OW2uHLip1LTbcTd5vN0r3UdWesRKFXyg.webp" },
+        { id: 92, name: "잭오 잭잭", val: 150000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/NgixuNheu5SYJC9Aepqm4_iB3uLlVz5D-4M5Jsps52OG0IZsX_9S-R57yS8tPOjekS44Yzd6tg0DSWKRgQypF3fjy1EnfNaMfZTejdvAnv2KIj1EDuabxVKAc4lIT9arnk9-OF0un-exSbYz8dc0kw.webp" },
+        { id: 93, name: "프리오 닌자", val: 265000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/fxzjYyX9p-IOyNFl-UZcla4G8XJ5Ha5ukrg6gEEH-sDCT_bfowOIvDDDQKNhg4ZNcRFjW7rxE8f4f8f_T4ELOZ49lG1tCBhKAu5N2XEnVp9aX4QIRMVJApFeStDdP34fTsVsjRjzbPsXm7vPsS-I5w.webp" },
+        { id: 94, name: "텐타 코로 텐타", val: 292000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/KQTgHghjVwLpuzHdyTjXQHiCT3yssZ0vwG1qlFTN8EC2catQTaLUUjo0Q-gXB5SDsS5tEhCpfVySSHfMdrGjSoDADN-9VZMwSgYh-ew6-xd9C-PQLY23vnHJNyoaQJj6l7LmcY1wtwCNcDOvvMDfMw.webp" },
+        { id: 102, name: "노오오 마이 플리즈마", val: 280000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/K1IHVJTVlM6ds9XLhTDz00290ajXHafLsrO3uSv8aPobVQWMYR44v5hABG6bKCPsmDo24YbEqd4tzpBoAUgDXwYGrdmZKv10N8cwkyX4KYdkQLARusKujbdYsstQ1GaITDut9eE2oGJYafOtC4ff4Q.webp" },
+        { id: 95, name: "벌쳐리노 스켈레톤 디노", val: 500000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/wF_RVq9ccVqG551ChBdcdeLlQwJQ8yXGqHlWUKwjS4YozkmNdfFeEatE-9LlS4IMfNWZJiPRiIa_dUE2s8Sw3qGHXaMl_sTgAW3l19ADSdWSvIN9Kvk8ka2iyEZyI0kHq4qgjWBpMLQUK69IFRODCQ.webp" },
+        { id: 96, name: "로스 모빌리스", val: 22000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/UefalXzGfEwbLxHOTULBa5nGtNyrNv8-t-k95zpg9I1MpUt3lwv0ecI2M5rGU1oItua3py9r8A2ZAEWxObxGYxCq8nGcwZztjk2bPhwDX6ReJUhDGxcFh5Z-aIkDPYLR4m-T8VySXz6crh5quUhVRQ.webp" },
+        { id: 97, name: "몌에테테이라 비시클레테이라", val: 26000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/wXP-sZw9jfW1YBa3bpXs7jKs7fLqc7mmAbJEMt7L4kGd7FFTk2l2T48K2qX0zZotbRebholxb1pJ1HjNsN9u1e7EjDqm-X1bd4dSOZjolV23WQ-y1Tjv_90Ffe0hmHu5Yn6z2KLV-5hfYTySZnwZsg.webp" },
+        { id: 98, name: "이빌레돈", val: 31500000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/3CAG2bKeOH9DnfsEO1a4mY6LsKG3VUpLNBuRaMVAQ9m7fjOjQOTkiXmxSLDVd84gMJ2C5YQj7nvWTKQbkZoypGFcqe6gY-6SSB8oKLCQ2DoUsEzZS-X2vUh-t6yRVMEWtZIIX7qTDC4v5MioC2YvyQ.webp" },
+        { id: 99, name: "스품키앤 펌킨", val: 80000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/hbLhirMs3TcPbKN771HhNbfmOtoQEzEjb79ymhSUvs4UJbnzV_4xwGsuuamirdf_qpmrI4oiB6Zu45e6zsdhf0pipqXjE0pTk2MyzZd9ssDq4eSz8gKZH0I_vmpR9DWqvBca_LYDOnvyq7JSaieNDQ.webp" },
+        { id: 100, name: "해드리스 홀스맨", val: 175000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/en4jAbzcz1fzMYZGBQgocFjY8LepZOiP-t7WrwlR8GOnm3AvyGjvv68VmuEate577OtjCqnfsurDVLxurxBWqZ_O9xt-vEPdBgbTv3tZNfptKO-m2dVgBLA5fpFdF-N9x19G0Cq4_JI8HGEy-Eu75A.webp" },
+        { id: 103, name: "피룰리타 비시클레타", val: 2500000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/ES40Fc79wsFkzVrWpEV4aGUG9pjVFo7mBeuwMHUnBNmkdD9a6-oP-Ueapj51_ap7rtvn0tEQQyABb8RblihQtWQwfyOvSAqJTYbeDYhhzTFyUvKA7PWDfISS5UGmBLALNJdsBxWf2jDmuDwBFTmloA.webp" },
+        { id: 104, name: "수왝 소다", val: 13000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/GIObO7CKEX4_u9JOTiPkUW_94pEk7otJl5uqOvdTshVuzoNO2hXxhZKkbPZfCN_lYlqD73P-ffyYfTIzxJmXZqzbwmpeBoO0FjzbWwiQDJniYZDgY4AqMBZejx0b5fAns9y0SnwcRInxNwgioANamA.webp" },
+        { id: 105, name: "로스 플래니토스", val: 18500000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/K5Xrf78HO693JpFJWXzF7w2Py1FWa7yfM7YRKp_ghh5JDa0znu9DDhAG3WLg07e-eKmHVuoozOIh059c4up9M6tvnpvCRXZa1Ac5y9mXsvYs_Nc6Qg_B1lUcTlGH2AhLLij1rgL5-UXG1r3AClxAdw.webp" },
+        // --- End of Fusion conversion ---
+        
+        // --- [NEW FUSION] Additional 4 Fusion Characters (moved from Secret) ---
+        { id: 106, name: "로스 머니머니 퍼기", val: 30000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/WB1m6l4ZWUrHp_6g5ee2jsmoCf1rw6q-eN3YjYMxxstkN3UJXfIdSIFr9cRr7zNYDvf0vrRDtxJa6tZYDGaTuAIbHNGl4sNV63KNS9VezYvAdCTXaiaxHKL8k-Zr9_Tsuodn-tAEE0rO1NkJu60mag.webp" },
+        { id: 107, name: "오르칼 래돈", val: 40000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/dDzNW4_seDFMf7Ci0gFh5974oLmGvhewad_pLTDjK2_D8QjAyY7gClCpsBy99RVS4riJ4tqSYGWjsROouQIyohWHdoTIhkhnX1o5sUw5ImjjPw90yBh9TKZmVCqLmLLPcThUQZBV8kR1DwHyUuEMUQ.webp" },
+        { id: 108, name: "로스 스파게티", val: 70000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/hn0Qd-FKQSbfZS7mQXJg6e2hek8DWr_bpcK3LHdIoehF_sJTABnHDomV1JECDC-oYR1akw6ckeEDXarKVWtVvrZTBcyLSNDQfET2hMvMuxa4iqvzqeI_Q2bndf43kQLR63eUmUlPlIup9NdjKhMdlA.webp" },
+        { id: 109, name: "프라그라마 앤 쵸크", val: 100000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/rCbeT09Jq5H-qj-sQRKhcWYiWifIEYt96wQyEIT2reVzIu1AeiTPnGd104K9eAVdBLR8spvhPqTlr0wl75j8pnGPFm8YSvggfeNZJGL0jVliFQblKC44tSaX4-GwLhdeB_LLRFyMsmHVY2icFKsgug.webp" },
 
-        // God (Rarity 6)
+        // Fusion Exclusive
+        { id: 204, name: "라이노 핼리콥터", val: 11000, rarity: 5, isFusion: true, img: "https://i.namu.wiki/i/TgmVXio-zCSk4Xxt7ZbxTlnpOIXNGq4F0QImJw5cJniLvTXWt3CEdusVA08SLVdCRwImN4VwAmjOLIrwhXCoPPZylG1MfEHfZkjd82UBDpY_cN2yTnUoVV6hNONkllLTLFPivXEScHOYVEy32Kjbqw.webp" },
+        { id: 205, name: "로스 누비니 토스", val: 12500, rarity: 5, isFusion: true, img: "https://i.namu.wiki/i/i9_Rg55NwwzK8HGpkmTrAgADDz8MHii9J9aCLUBIn9Wn9KxmzmyKMqolMVQ_W2d2qKh7ffLo6mGnfhpxTeW4NWMCITqjVHIovs9Fvsjo5WI8pE3t9oTsuiQ0isrH2aK18IXZAvYs8Zu5FhMl9vFMRQ.webp" },
+
+        // God (6)
+        { id: 51, name: "트탙타테로 트랄랄라", val: 10000, rarity: 6, img: "https://i.namu.wiki/i/WbRyUWVK71lL9dWJ6QNBpyUQoyzQBZDQbSzD_cRPFZhrZVfMnZniB1YjYkzc3k6AfPcW2HB-A8fVay4UwYy9sxOOscUoAqXnUvMWrIibEArTJj-2Hf7ygIGfChBKh2mK0em2qt4ZTrlEgYisnidorQ.webp" },
         { id: 49, name: "코코팡토 엘레판토", val: 17500, rarity: 6, img: "https://i.namu.wiki/i/koPBybXWTxWKrtVo4bY3FDFYUcOoc02ZXVbDB7QlOsZpKTWANxmJUjEPUT2q_gpDOeZea1OPifp_0ZhAUW837Jj66j35Mz06mcF6Eb1XgB9Y3maCbT1irllO1qBf_GKs21RNl1j_4nxCCuUwfvHG8A.webp" },
         { id: 50, name: "지라파 첼레스테", val: 20000, rarity: 6, img: "https://i.namu.wiki/i/8fPKwHYxzEuJh6EF1qNeM5Wy52_5ThiCL-byKgMd3OBAWmUo3ZSBnvCx1NE7ZXfLym6Ja5ne8xNyAXzKc_AZrkRiIXHVOedP9mxKUb9GFyoqxQnMlk9bPdnLaz27HEMxt22hmZUtaN_Jxif0xGwUtg.webp" },
-        { id: 51, name: "트탙타테로 트랄랄라", val: 10000, rarity: 6, img: "https://i.namu.wiki/i/WbRyUWVK71lL9dWJ6QNBpyUQoyzQBZDQbSzD_cRPFZhrZVfMnZniB1YjYkzc3k6AfPcW2HB-A8fVay4UwYy9sxOOscUoAqXnUvMWrIibEArTJj-2Hf7ygIGfChBKh2mK0em2qt4ZTrlEgYisnidorQ.webp" },
         { id: 52, name: "오딘딘딘둔", val: 75000, rarity: 6, img: "https://i.namu.wiki/i/xvof4Iq9oh_6BNOiFUqaLWQtTntJYQ1piWzOgdhYW_9IIg_Io43WMXsP-zfq4j9szUrnVUgEDxpjsQvQnE2vI7KpKZs_ftaI8H59sN5w0648C1hceyFEQvKognfrRHMkKqhUQVQ09vM4NS5YGAu3Rg.webp" },
         { id: 53, name: "트랄라리타트랄라리", val: 100000, rarity: 6, img: "https://i.namu.wiki/i/JzdXQiaHXC8Qb-1GPXNJAR6s7HOWz33ooRAYlB73n5z8Vleg9SQdfXLAFHZRfG2mwpTAYmcIRzoJY84aNrIauYwEuguKDvxxq64RT4Pv613gPlvIcohA5f-qixKHz6fMK-7zAOXY8k5K1ykQDFHviQ.webp" },
         { id: 54, name: "트레누로 터보 3000", val: 150000, rarity: 6, img: "https://i.namu.wiki/i/UrhZ3POgmnWPlmiX6CA1TYjePe9UDIdAaIGwJXeLDPXSzAaWpOUXEQiIX9mWiLsezbR7sVgCc5fFD9L3gCT8QU9Ty_xwRjEsoKh6fmwu218P5OyZ-Y1QfZwPfabIkP4jJpTqYyhbdEhvemIhHQLl5A.webp" },
@@ -374,114 +598,911 @@
         { id: 58, name: "피쵸네 마키나", val: 225000, rarity: 6, img: "https://i.namu.wiki/i/5DTtOoJASjK8mJVTtN-pfDuKZ0hJok0UdaIw6D74KUTPhGEZHea3IeJTA2LReEhVqUYp505agD5wFTn4MgfKdCuHnuY1D6vNBxIpmd9HWpnQq5Urqq7ZVMYmtXD0PE1fq7wCctq55__JS7Xn13v9gw.webp" },
         { id: 59, name: "트랙티노 사후르", val: 230000, rarity: 6, img: "https://i.namu.wiki/i/jGKPVvG8JH4jnOjtVM0QkgLTSjtL3U52u2RwWVmwbWy0c88rd6veJtnxKwp0Df1aqo_SHWmRlciivUotJFZxTtBEaLEthuanj1vq7lXvDn9VteW_hWJD2BZw3Bw18o1-0IZER7eoWy-IedEb922dKQ.webp" },
         { id: 60, name: "카카시토 사텔리토", val: 240000, rarity: 6, img: "https://i.namu.wiki/i/tblb_plIJe0yJjF91EpT_b3x3_mEWKug8GNnymn2rtX_1ujLrPT04cVAh5v9HkhpwH4TCck-S9en3T-JwPXIxnYZVFu4FiDfzx1Qmlcom7z3k0Nots2-SFoAGhBKNYjabCta-PVpDaVo7fet8kO85A.webp" },
-        { id: 61, name: "아쿠아낫", val: 245000, rarity: 6, img: "https://i.namu.wiki/i/8NlNhsUE7T3nLL_p1doppNWIAWimMVd9gr4kFbsLyvIW7kZnnXvSszLuT0G1VKfQK5GFaJoiL9ypNSz5aqgdEqdvUGHwAPodPp2VldtoRSgb9tzpiaCHN9jiXxf0DGuyKAHrxRp5wPaFSGty7dicuA.webp" }
+        { id: 61, name: "아쿠아낫", val: 245000, rarity: 6, img: "https://i.namu.wiki/i/8NlNhsUE7T3nLL_p1doppNWIAWimMVd9gr4kFbsLyvIW7kZnnXvSszLuT0G1VKfQK5GFaJoiL9ypNSz5aqgdEqdvUGHwAPodPp2VldtoRSgb9tzpiaCHN9jiXxf0DGuyKAHrxRp5wPaFSGty7dicuA.webp" },
+
+        // Fusion Exclusive - God
+        { id: 210, name: "투카노 바나노", val: 100000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/Y_2-EaJ6WaSQY7ZsLlsrQ0BjB8Lk5bYjzf3VP_PONwu_B99rWiOEzPyNGY0k8xy4AfHQF1IsXVEVPG9FONOBjPTRuRQ4x3srTxTWAAoGLo-KtE4Fpn3gD65_yN5JHKAKADIc3r7OGAY57nUxH9V-CQ.webp" },
+        { id: 211, name: "브르르 에스 파티품", val: 225000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/4Irapokd1rHz_tNpIIKBw6bNfAhItD-IyJ8rTYv7H8WccRtH9BDsPXfpTK5Dm4V8VOnocgCxQhfIc5of_dSukXunf6kceuP-KPcMo9wAt0qeGlX2zzcGohUkG7pXQn6rlBtCcdaU8yCrtx0HZmsDsQ.webp" },
+        { id: 212, name: "안 토니오", val: 18500, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/js7fKxhfkmzSmaLxSSJ-t-KZXYim8b4QQF06HtHJI6GP5V7RvMEr84BV-HjYdxRgi3Z649WQkKfSwGZv-ip7oA.webp" },
+        { id: 213, name: "라스 카푸치나", val: 185000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/hNTCA_Hy-itkMdGScfcJtu7VleJW6R-L1iRs547O3BZ8bYpfvxRLcRFV5nG6hByCevnXAkLT7GH_OmNs8E7VCznv5ITpXXXEwIXCyqKdL-WTBfoxcHcuhm7uirKnS7MIejIzf0XCNe_7xAJ-nvJOYw.webp" },
+        { id: 214, name: "안팔리 바벨", val: 280000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/4YAPuZUgIegvBs322_FH4uVMvproEqi9B4ACCHMYcjNLqy4UviIqZhs0hlxjXKxmS3pwsn-vrO9q4DdLOOFkSusauSikSmHM7rmzIQwOsNecycqVIxyMX1ZglND4TLck_rfxRmoA0Hu7US180yiWzw.webp" },
+        { id: 215, name: "터보 4000", val: 310000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/skDVgyErKxGsIJbh5N1YxD09bE0imagjSBG8kwauZnFVj1yqHVfpMYTnKlRjbg9nMPH7Vslnq4swYKi9s06G3Wj5w7_5IIHN1egF9OGNJF0HEguWtOFqm0pP8vW34dYruuFLjnO9KC7rqNgB1HR3xQ.webp" },
+        { id: 216, name: "프라곤랄랄라라", val: 400000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/DKkUpCxoa6y0AUJp9xPmp0PrYxGmGu6gf7A6pnXa0dJx1SpoCKlLqRkjUzQoMTokrCDIreEY4JoSIMdSfFhOLY8goD7SBCzZguLBFtG9U8fW_744JQvudVg7-ISUMYLoKrHAGhtbk4taquwGMRR-hw.webp" },
+        { id: 217, name: "라 카킈르쿠르 콤비네이션", val: 600000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/iTXNPyoZ5JG60iV9tk6RiV15WMpvQ_Hu7n9Y5WOIw8wMdUNJBCfWm4pmeAH1-50j0_TaQWaH0fCbxh3q2MKuOWeO7hcp1Xm0FS9bwUwu_miHga8eU5wyny15Cpl1B0nA2JXdi9hRcCCwPghtaDqtyg.webp" },
+        { id: 218, name: "카르키르 사후르", val: 800000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/pjhRhKwSB30eyNMrdUy5oZnfa3VR4Dc2SuGTslp8Ba8GIY3j72ejE1jf4o1NR0pDZipF-Ht7UQ5a8uCKR_Tjz1P3L3zSYorgEFOCHkbrtnxf9xT_5T2MNbSfT2cFO6NvhzVK96PzNDmKk0yQzpsKQQ.webp" },
+        { id: 230, name: "라 바카 프레즈 프레젠테", val: 600000, rarity: 6, isFusion: true, img: "https://i.namu.wiki/i/bYXXz8mXeyp21Z0ocfF5_rSPbzqBEkpZmgRMRr5ohJNDFFSHfbhwUjNcifRA7EQzdYGkxTA0tVmm0RhnYPVTa8TxLUUGp_wwMU1pL-eXddpATgnJqoCPsIC6gkD7xpfAlb7Bl3uVsZLu-yjyQspsZg.webp" },
+
+        // Secret (Rarity 8)
+        { id: 62, name: "라바카 사투로노 사투루 니타", val: 275000, rarity: 8, img: "https://i.namu.wiki/i/mUUBoS-_avioSN-eVRxbfFz9FFWotC3RJZObWrz1rCds9fm-7QtjPcK8-b-jHz_JXVb9Cl2WfHlPbrE1WtNnx8eoadw4dxHGYFp_ifZWLZhY5B9e4frXwwwhf9gKXmP1FoXQTt7kf4NIsjh5tNgOdA.webp" },
+        { id: 63, name: "로스트랄라 레리토스", val: 500000, rarity: 8, img: "https://i.namu.wiki/i/d6kT7psuENTkY219KA5qN8IPTN95-BlamK7gch6SNFTszJl8okZSTfJmpC4HhcUKDSsJzY7K5rr3iL2dcS__vkyvNyoVimAVD9avRTSmdxoX5m7jG3IlbCrWrvDb28sSI3jqD_-RSH-NzynlChWKZA.webp" },
+        { id: 64, name: "라스 트랄라 레리타스", val: 650000, rarity: 8, img: "https://i.namu.wiki/i/k5VzkZUOTeN-SSn9K2kVRPzaGIpiV9ODTwpxiCzLJ1KEomuL7sSgBSDjyQHwDGz_wQLmM248YTYKKO0tvzqhEUBifCOu_hkoCPWgAC3kXUhskyzokDRE3U7MiAY-8GaFsBK3H1pmHPR-9Pu6PetuTw.webp" },
+        { id: 65, name: "잡잡잡 사후르", val: 700000, rarity: 8, img: "https://i.namu.wiki/i/TXqf-7H_lbI64RR56flpWX9iqBOFbzzUTwpzWRvxKPv5d_FzxxKLYUZMn1XadIrCFO66RfNagwztNazEiw21C5Vn8avLssyfuNzzIklLrWxUWmuiaJwW2Myqf4pzO-Hjh2XW7lJOTl6pBtBF_FAaSA.webp" },
+        { id: 66, name: "그라이 프시 매두시", val: 1000000, rarity: 8, img: "https://i.namu.wiki/i/0-U6EvuDOPscsVqDW-Ygvr6DhuO-mJx77J1ge88A9mVqt0x8UH6nJ9xorT6c95PR_IvT651Rup6Sw4qAlFOo6g.webp" },
+        { id: 67, name: "토토토 사후르", val: 2250000, rarity: 8, img: "https://i.namu.wiki/i/t-UhiVFZzlAfes7G9A3rb7-yA5NOC7_NY3-xgV9uCiBFT5b8pCnmjgRw3DEgcviyA4_oWl_dhdOHb5NKcP_Qvo0ZC037G570v8SWqn7BW8vsUU0izt078W5Zz3OsOXntzcSWcbFhGQD3Q2wFuHnCsA.webp" },
+        { id: 68, name: "치클레 테이라 비시클리 테이라", val: 3500000, rarity: 8, img: "https://i.namu.wiki/i/8jz-27neFHJgHNtT1bDKk7OHT2NYvLoL6jxFeY0oEa0fpOyBF8NPLLLHqAHOBlBxP-mgemq2SBbUI9VfT3gVr5tX8_GmA_UW4Wquipr9KkG5WiyBJNZiPYTdlAZquNDgE7-LVFcnDDNEnzqxn_t0QQ.webp" },
+        { id: 69, name: "치클레테이리나 비시클레 테이리나", val: 5000000, rarity: 8, img: "https://i.namu.wiki/i/8EShDk5riw9Y6_Tshp11hReE3QaLefrCtt1rNvMTdLLyJHMh0Vz0slZN4BBeowN55Xwt2H85HObarbyPlC20OdxQHrvin0Ed0VBz8yeBs2AHz46s84rP3qZbW9bpHAeFO4Fis8rfnDHrxknoMEoy8Q.webp" },
+        { id: 70, name: "라그란데 콤비네이션", val: 10000000, rarity: 8, img: "https://i.namu.wiki/i/O5lgKmAv-EveQyWCr_HsxjD8Z-coQXsIU2vq60Wtc06-sQEb5pwaGxRHm5YFVtocS9VJ2weLOfpCQFAUEtlJVCvXBwMDNUoI8QkFE71O7F8bGUMCj6N9QM1pWeUaNrbx5LkqDOC2Wx8prCc5qDINwQ.webp" },
+        { id: 71, name: "뉴클레아르 디노 사우로", val: 15000000, rarity: 8, img: "https://i.namu.wiki/i/Osiai5LrEzEoU9lCFVLACIXcMjYEKo6dLBf4JIFTvBx7ytuXiaKQnhliHJG5FsqX2qSE2TUV5joZlXvzHI_2OHrym0SuWM3tnm84HyLeGKXe-H2cgF7veoHbgqjrOvOWh5tIPFN6SX0lCx2AvztqAA.webp" },
+        { id: 72, name: "머니머니 퍼기", val: 21000000, rarity: 8, img: "https://i.namu.wiki/i/_WLyvraj2A4M1tLM7SJkh9xA6qkXcPlhzrAkswSXnsTtxcuaRsDyOiVx1gqOs_lkLpk307lCdBb31vlk3iDuDL7GLs-Ymjzw3_bmqao_Kspq5locQSrgY9E8miZO9P8ISnYgm435LeD1lTZ9JJa_WA.webp" },
+        
+        { id: 73, name: "탕탕 켈레탕", val: 33500000, rarity: 8, img: "https://i.namu.wiki/i/xFk9FUkS63qg9kLXhjFJaCJbxD2ZuxKqmUI0vEnRIGBlDDaLRF6irTEUrNZnSgtygkpXHe66bQmVC5EnojLSE4a7GEeep0lSzobTtd_1O-I6FNvUNb2IDflBB2ebMk9eWa5bX-bVYoJmJiaMwy156A.webp" },
+        { id: 74, name: "케투팟 케팟", val: 35000000, rarity: 8, img: "https://i.namu.wiki/i/FpAadpEfBymQHPMzROXAKsODCiC7fbGUM9eNmPO1S7Zx2Sugynz4bXTa9rt68hwgkpPfPC0fj_CFDUgvOAGwp81RT2gULS8gLj5kd1GvrENRoShv2HZPxYqYmra6M-sDnX6ryWG5VMkGD6rndSWKXQ.webp" },
+        { id: 75, name: "틱탁틱탁 사후르", val: 37500000, rarity: 8, img: "https://i.namu.wiki/i/p8hn0J3OmMWzfxwoiWVUMpiMw27DR7YNkskfDHm1yIJNa8s8uQATOAm3NKrZSIjl2g0-94FNqHQ7KBr_oh9Ih8LGbHdPyY_5hvT4Z7BV_dUoSib63KUJbotGmOYt67wV_oTdK8z_IHRZQTpFUdN69g.webp" },
+        
+        { id: 76, name: "케추루와 머스타두", val: 42500000, rarity: 8, img: "https://i.namu.wiki/i/cVz10Pn6mTEIHcT9jr_9MJgogSs8WqyBhDRJMlT-vMRhPMb73fnidPKaU3cYIdD62QPm-0is67QsILMhZpoYpE_NgGprQP26Cg5mnzVElcE2gU38Z63oYpKa0ryJyYTgXin7GTBSDeUGO3JUtshAKA.webp" },
+        { id: 77, name: "가라마 와 마둥덕", val: 50000000, rarity: 8, img: "https://i.namu.wiki/i/9UJgWvFQJiWU60whtzqe7bUpbdwqsqLb7Q8pwEHchbVT_Mqo_NArJiqeKTdz29Fn1C2LBxTbCfE-zlgLU140u_q7oRbWMu805XFjHcw49MoB9sX_bBIKIwzeJtPmV_4WYAOvYR42p_7ry8XU-nENWA.webp" },
+        
+        { id: 78, name: "버거와 프라이노", val: 150000000, rarity: 8, img: "https://i.namu.wiki/i/etTWkA0Y35D4YuxKl-efx4mW-sH12HW-6mT0XxXd58XO2Q_Y2__mBHuSes7SUr3_tD4oScXMuX9OOBBUH8nBZhCg23VrbNKpejoUWBfECAEYrDEGvHNigP5ZCL612XYXDZaXulVWIAzsPfk2Rc2OTA.webp" },
+        { id: 79, name: "케피타노 모비", val: 160000000, rarity: 8, img: "https://i.namu.wiki/i/lD2_u5a8f35uSoMrwspdQPSH45Tz3P9wE9vFqr1ng0ud5DMYWH_bsaodl-SJguuudLs4kRHL4HIKbVZ2YLB9x63Yf8r47gxBvBDBK2oyBcdpT7Hk2y2rAVLuu0KD4xYLeWPVjPeVUoXtuywAcc77qw.webp" },
+        { id: 80, name: "드라곤 카멜로", val: 250000000, rarity: 8, img: "https://i.namu.wiki/i/v1SoR8dOOKxoLpZjZoNEQD4YLUOh4cdzzkRE61mf-toaCf3aCBGgeepJX4xM191IKsIi1sIF91pRven_ZF8RVDHsmYZ6IUbGq28yotOqTD0MfBh-BJVlWh15m-eT9hjD_iyLRH1XB9f_PCt3QG6reA.webp" },
+        
+        // Fusion Exclusive - Secret
+        { id: 220, name: "아가리니 라팔리니", val: 425000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/51_rap9ihih3R48MYaMJgaLccu5jVJumzjFI4wEKBZ4Dfqp3beLrhsZpyZGJeonCsFS9mFz4wZVY5t4G9rOJkw.webp" },
+        { id: 221, name: "로스 하스팟", val: 20000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/zN10w2v9CLO7hnEpgikfz6EYgt7dl1xYiWjOYgG7cBBN3DKDhLMOfuu9LnPFXrDQInlJwN5-2sYQSOkkogmlYfS6YQVzSxT3bIMPG5TUzJKXKZVOzv7SITfixD66pSHrQ_f9K9Nddd7p4_0K80Yg9w.webp" },
+        { id: 222, name: "라 슈프림 콤비 네이션", val: 50000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/28muNesEsG3skdNrVD2fmf_XQ0y9hXyy9GbX8mx05xVmsRRl1kJioM4_9oX051PHVf4NMKQkkcxe_gt1hp5LeEGuXPNNRxQu6iobNHzK-GGQxSeWNxUvsq_-a8nnzMyTD-8ZNWZm8Xrz_qGtZNeCCQ.webp" },
+        { id: 223, name: "라 사후르 콤비네이션", val: 2000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/Z3DvSVYUdBEaTNjKCmz4XJfu0fiiubBlRFMhJ8x4gia6Q0ljQNLc81JSIwZgcK6o2Veg3e88yvq1aBoQIvWHmFyMQe9prC60gBK8YXDpb_aXIuqT0CIJ9z3rCP9TMFdbRYzzArI_VdrhfGrtrSY3vw.webp" },
+        { id: 224, name: "라스시스", val: 17500000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/7ZPuL7pql1r6hn-HcKxDXgtQIWHnv5vQqLiQhxBmpvqqNhIQgxfLnv38UT-myGLRNARmUPi51RfE4-l7MlDkEocvt86lTkZh5i4ELc5acIFXs0p4xHZPAfyRGqlDi6Clj4GwvX4lwsoZUBYMLhrsdQ.webp" },
+        { id: 225, name: "세롤라 시니 비디오 시니", val: 22500000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/pP9yscZYMdHqF7azAUGHjLUft02KSFHACBl-Vbda1tDjQGNDmZQbjjeL0YA_4FDyNUxCN26f7wTS_8_aTUckr3Om6Byo9q9mMWMcQqi4HM0KGr5EsM02sTkHrP932aELb3BG1OnU16UGM3aXcpmH-g.webp" },
+        { id: 226, name: "로스 브로스", val: 24000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/0-ZYgSQbcxcUJqhKkDhFLuOnROXqqgjvpsYk1l1hCteIcVIxtzXKYL5zidd51k7OG_s66XO9DoY0SrQ_kwfhzJpVB9SodzqOtsejP9iqtRfcc-76ImRKSsjoada5pI8JB3OCM0Qt6D16bWFJ_0QIQg.webp" },
+        { id: 227, name: "트랄라 레돈", val: 28000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/WhMjZTkav8r4JsFdQvDuXl-RQwfjyZ0yKF5o3dgyMyjubLwkdCGkCCgYsDUm6q-8KwIgHlY7fzGFqTylxnogyxp2-j0ce89zeMTjG7ZQlYo8BXgVxN82isSJICIBtfShhFCU90WfAYsynHx9qZ8CNQ.webp" },
+        { id: 228, name: "로스 프리모스", val: 31000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/xhS5_AVsiNVCrZaGFTdmkaV6UZk74SDS93--Rijwgb3A63HPeM1KIASBYJfSSMZIXrBlC9jqEDKX2fqN4Dt4lU_4p69Zssk-Pshmvf7XHUyw89dXQ1Lj9nXAjd5YqEVMwGsfU59uiwiHitXhydSHTw.webp" },
+        { id: 229, name: "로스 타코리타스", val: 32000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/NSqnFfbGLW8tH1LtLy_dx9F_gExmX8I-j15jFcHPpNN3Ln99YFj_PNhGkx42XfgSsE8Jyd3t2GKNedDcKhdHDjKJsswpWQadoP1aEdfZANR_vxw-h_Re5GI2fac8Up7ew1ezc4ikcnXyg49ftqLwag.webp" },
+        { id: 231, name: "호호호 사후르", val: 3200000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/8zP9LMMRX9Tt6lilCEuETVQCRqH6K1nom1pW3_gF875Di34MnG9kcN5uGZmdYKRHGC4ylsR-F8628GXFttSNdz9b3eqBBxIiEuZsY0MOmfcYEBqnjdGYR7vx9kUUdPkxUCe42E9aWEywlO-yTcih0g.webp" },
+        { id: 232, name: "치클레 테이리라 노엘테이리나", val: 15000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/XLcV4T2xqXwoHFJuSbP7028_csLLR_SfPHjLCLPBzt4dwebunQimKJD6pvqc7XWNiSPv_UL2Lt4U-X2I1d90queZtd8bcGWvJNT3U3Q6DHTjhFjvYMDCXB1-gyr69v5MazowVYqqiVxQyzxZYQt0DQ.webp" },
+        { id: 233, name: "쿠키와 밀키", val: 155000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/PJwS1FMTHssO3xoiFHye2B5ki1fNmS6mv0Vxr0pO6mKvWheAi73NeSc8rB5dmX28k68N0b5JrFcIc3yn20F4wWAqJUx-ks_gOH8yL_4nRmBrCaPgkvLMZt-Y4aUnK-ZtIQlA-cO_8JFLVLSctCInFQ.webp" },
+        { id: 234, name: "드래곤 진저니", val: 300000000, rarity: 8, isFusion: true, img: "https://i.namu.wiki/i/n3wIGTfgNoky2Fnbimno11KOZgV3HWCbVl5-JGWy9mHqKUYsKaEayU8pwqTIdTpNW6qWJUL-JVOJHsdG2W34m_xaAD0UWval2jtxaR1H0pT5KhQ0hzVmUpnVP0yBO86SdeqJm3TiZEszNuMQFeeghQ.webp" },
+
+        // OG (Rarity 9 - New)
+        { id: 81, name: "스키비디 토일렛", val: 350000000, rarity: 9, img: "https://i.namu.wiki/i/qgIAicpseL24J1CtAoojCodNbEw125RcbkDj_ch7RDbAMIXihvNu8rS69y11eAy-sl_gRVxC9akZ_v9OupmQ-rX1LzbzCTHTzXYVN_YLC6KKq3SSx6jykwTzOl8wPkWM1zm1EGpDTw7X6nX1PdrCew.webp" },
+        { id: 82, name: "미야울", val: 400000000, rarity: 9, img: "https://i.namu.wiki/i/ei04bjQJVgiaJpR6ilCbUb8npXWmT9m2LXpPzvdwLo9Z0Gn3mu2M2gseyIhjVAtcFpx9_xN3T8JUhp0FRmaf_Wg8lD1vRfJriToHWweLeOft8zLfEKi3qu1qqoSkyOK-q2MZpWhjwQfVCfqbrh7vHg.webp" },
+        { id: 83, name: "스트루 배리 엘레펀트", val: 550000000, rarity: 9, img: "https://i.namu.wiki/i/izTgdsMhvq_cvHnEmg15gmASyD0YjrzB1TMlVjpA1Ew-mIylR5wsoY0TQ0Sm65hMsui6B0yYp8w90av4_Ov4pCouArrd4zZdVP-E0AcVUvko-BENnRODO2eWcx8puHcE8kW_1Ob57e6EMdXQ8DoL3w.webp" },
+        
+        // Ritual Exclusive
+        { id: 300, name: "로스 크로코 딜리토스", val: 55000, rarity: 6, isRitual: true, img: "https://i.namu.wiki/i/rQcTMwF3AEcbIfoU9A65alEXnxW_945ED18B6tZoiDVSCPKsSt5TEBHkEYbgqil0x7rvADRtX3r88N-vwYzQ-RSH9132GarEd4Unen3CHMLih1_48gCfDt8Fo-0HAF2jUL9isGF20eldjwyx9zU_Qw.webp" },
+
+        // God Luck Block
+        { id: 401, name: "티그롤 리니 그래 프톨 리니", val: 60000, rarity: 6, isLuck: true, img: "https://i.namu.wiki/i/72NhZ8c197Wlkk4g8pJ_zb6W0Q_DcsntnOk5s8cjY_Nk9SLRz_2uRZ_CyzBTAMp6568aNLOOSvyNrplSKnmt_hSs03b5w-Hey3tHOXwpc3ECsadNtw6bfU1XQXzrC1JrVwOvbrjYYjhLLEsu04O0MA.webp" },
+        { id: 402, name: "오르칼 래돈 오르칼라", val: 100000, rarity: 6, isLuck: true, img: "https://i.namu.wiki/i/HiHhHDDLZRCL4lxpgF136aj1u1Evxu9UPn3C2oA0Gz9lxszhkEYthqIVKPuj-ZOedXZdpqgk34mrcN-Jt4RYeusXSYoj6HY20qyCpQ3Go8hwRmHDa-lO_4njGDpRKDP9OtwsJPGS_uxXRMxld26DbQ.webp" },
+        { id: 403, name: "불비토 밴디토 트랙토리토", val: 205000, rarity: 6, isLuck: true, img: "https://i.namu.wiki/i/IyoTiIUgucSdFF1JvUOmk-RXohEw830n1Ax3K0dmoN_VheH1O_DRe_WfvBf--owEz_EgjVkVwSx7SUKKPHelzK6BDLs4c7wSYk34P8pIlx7nNBX1G2Yw4ZkrZeR0LsppLLU6YpLfscaRqAmqU-PStQ.webp" },
+        { id: 404, name: "마스터던 틸리킬로 킬리 칼리오", val: 275000, rarity: 6, isLuck: true, img: "https://i.namu.wiki/i/4vTkBgvLHEQmdjuOzI3CXiKVznUe5-qjQ1BRbTsPm3f6BzHuor8RahpMzO-Flmf1KwyUMH7173tErF1BBq7waUAMKdgpQvWLA7mPQ36bEuoQTHA0S3onUrNYKO-BpPlLXxWOpqVdBQL0-xfl-YRGvA.webp" },
+        { id: 405, name: "팝팝팝 사후르", val: 295000, rarity: 6, isLuck: true, img: "https://i.namu.wiki/i/8FM7r08GEx4SqsZwktBcsSAk8iXnsVsBryutpE2a3tfHhTuSblblexKezkRxiMlEeeFnTD4hpc1V82qsBlmaA45p9PDDOfS_3HFuC8rkOXigfR0YVc0aDaflVQb6OC9CxsQ40I_1Ort_7vsQC0YwHw.webp" },
+
+        // Secret Luck Block
+        { id: 501, name: "도루트 디니 드라곤 프르트 디니", val: 350000000, rarity: 8, isLuck: true, img: "https://i.namu.wiki/i/srTqFfslUeNte5euhDlkuU8WMfmmskWrODcpK0UPOvHWuKmjAGHIv8wh1sKmR-kGvy00CS6cCLqmeR5UKxIHIsaOPXjUmrpRnSfV3839wbZy-Qkzxj4_i8-gQL4haHvEZC1Kc0uq5m8rlpDcQTD5VA.webp" },
+        { id: 502, name: "팟 하스팟", val: 2500000, rarity: 8, isLuck: true, img: "https://i.namu.wiki/i/VvbnD0hQLt-j5aBzGda5FkYrrFHCYE4yzcQ5oVZjybrHpyjzXMHEqGA1za-Lg-OrcDmAbX3By6ja9QFH8JMApiV7Wn4khj_w4tHMiuCWpZ3UPM2QJn_OoiFCsoojFJoLqcw7OWsU27gpZAFAs_XYGg.webp" },
+        { id: 503, name: "애석 시콜라", val: 30000000, rarity: 8, isLuck: true, img: "https://i.namu.wiki/i/_KhNbOJe8rhxCA-dGruHUp4BichXnj7ZLCgsRBX2ciMQNF0NePo7usKAHWik0SH_SivZ0BJir5LmDZNOFue5-ubQdfcqHnhxCoGdQFp8BoeMU94D_SEyFMB4XIGgQAs2S0uhQtfiMoRi1orQ23rwFw.webp" },
+        { id: 504, name: "스파게티 투알래티", val: 60000000, rarity: 8, isLuck: true, img: "https://i.namu.wiki/i/HEu8YwWscRwpXezE7uIAhjtV9hJXS4zeDtJZJ63-i4I9ceasL4h_5-5-8etOY9BJdNVk7InaGYHz7WahLBNGQIm14dSxisY1HOuU2AaiQxvC2FBW-ywiOI70yvn1tA3oWYMTbIZk2F5JEaMKJg0_uw.webp" },
+        { id: 505, name: "라 시크릿 콤비네이션", val: 125000000, rarity: 8, isLuck: true, img: "https://i.namu.wiki/i/dslcGdEo8LlljvfJ5-rzT3-Wu-Nw7h6QKGjGoFxROo_pdUFN_jddEnPr-DPfx5P1QkkGk0dp7DU2xeuJtEXa4Yul5K45iykM1whIQw5ZjCwI9HXTE8tYN4jZy0x4kCnWlhsUoNJEFtcEatdU8SNHbA.webp" }
     ];
 
+    const langData = {
+        ko: { inventory: "인벤토리", battle: "배틀 아레나", collection: "도감", settings: "설정", equip: "장착하기", battle_start: "배틀하기 (XP)", sell: "판매", cancel: "취소", base_title: "나의 베이스", battle_desc: "인벤토리에서 캐릭터를 선택하세요!", select_char: "캐릭터 선택", gacha_result: "획득 결과", pack_normal: "일반 팩", pack_rare: "레어 팩", pack_epic: "에픽 팩", pack_legendary: "전설 팩", pack_mythic: "신화 팩", pack_god: "갓 팩", pack_secret: "시크릿 팩" },
+        en: { inventory: "Inventory", battle: "Battle Arena", collection: "Collection", settings: "Settings", equip: "Equip", battle_start: "Battle (XP)", sell: "Sell", cancel: "Cancel", base_title: "My Base", battle_desc: "Select a character from Inventory!", select_char: "Select Character", gacha_result: "Results", pack_normal: "Normal Pack", pack_rare: "Rare Pack", pack_epic: "Epic Pack", pack_legendary: "Legendary Pack", pack_mythic: "Mythic Pack", pack_god: "God Pack", pack_secret: "Secret Pack" },
+        ja: { inventory: "インベントリ", battle: "バトルアリーナ", collection: "図鑑", settings: "設定", equip: "装備", battle_start: "バトル (XP)", sell: "売却", cancel: "キャンセル", base_title: "マイベース", battle_desc: "インベントリからキャラクターを選択！", select_char: "キャラ選択", gacha_result: "獲得結果", pack_normal: "一般パック", pack_rare: "レアパック", pack_epic: "エピックパック", pack_legendary: "伝説パック", pack_mythic: "神話パック", pack_god: "ゴッドパック", pack_secret: "シークレットパック" }
+    };
+
     let money = 500;
-    let inventory = []; 
+    let inventory = [];
     let base = [];
-    let unlockedItems = []; 
-    let autoActive = false;
-    let selectedItemIdx = -1; 
+    let unlockedItems = [];
+    let drawCount = 1;
+    let selectedItemIdx = -1;
     let uidCounter = 0;
+    let currentLang = 'ko';
+    let rebirthMult = 1.0;
+    let battleTimer = null;
+    let currentCollectionTab = 'all';
 
-    window.onload = () => { initBaseGrid(); updateUI(); setInterval(gameLoop, 1000); setInterval(autoGachaLoop, 1500); };
-    function initBaseGrid() { const g=document.getElementById('base-grid'); g.innerHTML=''; for(let i=0;i<10;i++) g.innerHTML+=`<div class="slot" id="slot-${i}"></div>`; }
-    function gameLoop() { let eps=0; base.forEach(i=>{eps+=i.val*(1+(i.level-1)*0.1);}); money+=Math.floor(eps); document.getElementById('eps').innerText=Math.floor(eps); updateUI(); }
-    function autoGachaLoop() { 
-        if(autoActive) {
-            if(money>=2000000) buyPack('god',true);
-            else if(money>=50000) buyPack('mythic',true);
-            else if(money>=5000) buyPack('legendary',true);
-            else if(money>=1000) buyPack('epic',true);
-            else if(money>=500) buyPack('rare',true);
-            else if(money>=10) buyPack('normal',true);
+    // Fusion Vars
+    let fusionSlots = [null, null, null, null];
+    let ritualSlots = [null, null, null]; // 3 Slots
+    let fusionMode = false;
+
+    // Factory Vars
+    let factoryMobInterval = null;
+    let factoryDespawnTimeout = null;
+    let currentFactoryMob = null;
+
+    window.onload = () => {
+        loadGame();
+        initBaseGrid();
+        updateUI();
+        setInterval(gameLoop, 1000);
+        setInterval(saveGame, 5000); 
+    };
+
+    function initBaseGrid() {
+        const grid = document.getElementById('base-grid');
+        grid.innerHTML = '';
+        for(let i=0; i<50; i++) {
+            grid.innerHTML += `<div class="slot" id="slot-${i}"></div>`;
         }
     }
-    function updateUI() { document.getElementById('money').innerText=money; document.getElementById('base-count').innerText=base.length; renderBase(); renderInventory(); renderCollection(); }
-    
-    function renderInventory() {
-        const list=document.getElementById('inventory-list'); list.innerHTML='';
-        inventory.forEach((item,idx)=>{
-            const div=document.createElement('div'); div.className='inv-item'; div.onclick=()=>selectItem(idx);
-            const rc=`rarity-${item.rarity}`;
-            div.innerHTML=`<span class="lvl-badge">Lv.${item.level}</span><img src="${item.img}" class="item-img ${rc}"><div style="font-size:10px;text-align:center;overflow:hidden;width:100%;white-space:nowrap;">${item.name}</div>`;
-            list.appendChild(div);
-        });
-    }
-    function renderCollection() {
-        const list=document.getElementById('collection-list'); list.innerHTML='';
-        DB.forEach(d=>{
-            const un=unlockedItems.includes(d.id); const div=document.createElement('div');
-            div.className=`inv-item collection-item ${un?'':'locked'}`;
-            div.innerHTML=`<img src="${d.img}" class="item-img rarity-${d.rarity}"><div class="item-name" style="font-size:10px;text-align:center;overflow:hidden;width:100%;white-space:nowrap;">${un?d.name:"???"}</div>`;
-            list.appendChild(div);
-        });
-    }
-    function renderBase() {
-        base.forEach((item,idx)=>{ const s=document.getElementById(`slot-${idx}`); if(s) s.innerHTML=`<img src="${item.img}" class="item-img rarity-${item.rarity}" onclick="unequip(${idx})">`; });
-        for(let i=base.length;i<10;i++) { const s=document.getElementById(`slot-${i}`); if(s) s.innerHTML=''; }
+
+    function saveGame() {
+        const data = {
+            money: money,
+            inventory: inventory,
+            base: base,
+            unlockedItems: unlockedItems,
+            uidCounter: uidCounter,
+            lang: currentLang,
+            rebirthMult: rebirthMult
+        };
+        localStorage.setItem('brainrot_save_v25', JSON.stringify(data));
     }
 
-    function selectItem(idx){ selectedItemIdx=idx; const i=inventory[idx]; document.getElementById('selected-item-info').innerHTML=`<div>${i.name} (Lv.${i.level})</div><div style="font-size:12px;color:#aaa;">수익: ${i.val}/s</div>`; document.getElementById('sell-price').innerText=i.val*5*i.level; document.getElementById('item-action-menu').style.display='flex'; }
-    function closeActionMenu(){ document.getElementById('item-action-menu').style.display='none'; selectedItemIdx=-1; }
-    function actionEquip(){ if(selectedItemIdx<0)return; if(base.length>=10){alert('가득참');return;} base.push(inventory.splice(selectedItemIdx,1)[0]); closeActionMenu(); updateUI(); }
-    function unequip(idx){ inventory.push(base.splice(idx,1)[0]); updateUI(); }
-    function actionSell(){ if(selectedItemIdx<0)return; money+=inventory[selectedItemIdx].val*5*inventory[selectedItemIdx].level; inventory.splice(selectedItemIdx,1); closeActionMenu(); updateUI(); }
-    function actionBattleStart() {
-        if(selectedItemIdx<0)return; const item=inventory[selectedItemIdx]; closeActionMenu(); closeModal('inventory-modal'); openModal('battle-modal');
-        document.getElementById('battle-lobby').style.display='none'; document.getElementById('battle-view').style.display='flex';
-        document.getElementById('battle-player').src=item.img; document.getElementById('battle-enemy').src=DB[Math.floor(Math.random()*DB.length)].img;
-        let ehp=item.level*50+100; const max=ehp; document.getElementById('battle-msg').innerText="전투 중...";
-        let t=setInterval(()=>{ ehp-=item.val*item.level+Math.random()*10; let p=(ehp/max)*100; if(p<0)p=0; document.getElementById('enemy-hp').style.width=p+'%'; if(ehp<=0){clearInterval(t); win(item);} },500);
-    }
-    function win(pet){ document.getElementById('battle-msg').innerText="승리! XP획득"; pet.xp+=50+pet.level*10; if(pet.xp>=pet.maxXp){pet.level++;pet.xp=0;pet.maxXp*=1.5;} setTimeout(()=>{updateUI();openModal('inventory-modal');closeModal('battle-modal');},1500); }
-
-    function buyPack(type, auto=false) {
-        let cost=0;
-        if(type==='normal')cost=10; else if(type==='rare')cost=500; else if(type==='epic')cost=1000;
-        else if(type==='legendary')cost=5000; else if(type==='mythic')cost=50000; else if(type==='god')cost=2000000;
-        
-        if(money<cost){ if(!auto)alert("돈 부족"); return; }
-        money-=cost; updateUI();
-        
-        if(auto) processGacha(type);
-        else {
-            const a=document.getElementById('gacha-anim'), r=document.getElementById('gacha-result');
-            document.querySelector('.anim-box').style.display='flex'; r.style.display='none'; a.style.display='flex';
-            setTimeout(()=>{
-                document.querySelector('.anim-box').style.display='none'; r.style.display='block';
-                const p=processGacha(type);
-                document.getElementById('result-img').src=p.img; document.getElementById('result-name').innerText=p.name;
-                document.getElementById('result-stat').innerText=`가치: ${p.val}/s`;
-                setTimeout(()=>{a.style.display='none';},1500);
-            },1000);
+    function loadGame() {
+        const saved = localStorage.getItem('brainrot_save_v25');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                money = data.money || 500;
+                inventory = data.inventory || [];
+                base = data.base || [];
+                unlockedItems = data.unlockedItems || [];
+                uidCounter = data.uidCounter || 0;
+                currentLang = data.lang || 'ko';
+                rebirthMult = data.rebirthMult || 1.0;
+                setLanguage(currentLang);
+            } catch (e) {
+                console.error("Save file corrupted, loading defaults.");
+            }
         }
+    }
+
+    function resetData() {
+        if(confirm("모든 데이터를 초기화하시겠습니까? / Reset all data?")) {
+            localStorage.removeItem('brainrot_save_v25');
+            location.reload();
+        }
+    }
+
+    function doRebirth() {
+        const cost = 100000000;
+        if(money < cost) {
+            alert(`환생하려면 ${cost.toLocaleString()}원이 필요합니다.`);
+            return;
+        }
+        if(confirm("환생하시겠습니까? 모든 돈과 캐릭터가 초기화되지만 배율이 증가합니다.")) {
+            let bonus = Math.floor(money / 100000000);
+            if(bonus < 1) bonus = 1;
+            rebirthMult += bonus;
+            money = 0;
+            inventory = [];
+            base = [];
+            fusionSlots = [null, null, null, null];
+            ritualSlots = [null, null, null];
+            saveGame();
+            updateUI();
+            renderFusionSlots(); 
+            renderRitualSlots();
+            alert(`환생 성공! 현재 배율: x${rebirthMult.toFixed(1)}`);
+        }
+    }
+
+    function gameLoop() {
+        let eps = 0;
+        base.forEach(item => {
+            let bonus = 1 + (item.level - 1) * 0.1;
+            eps += item.val * bonus;
+        });
+        eps *= rebirthMult; 
+        money += Math.floor(eps);
+        document.getElementById('eps').innerText = Math.floor(eps).toLocaleString();
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('money').innerText = money.toLocaleString();
+        document.getElementById('rebirth-mult').innerText = rebirthMult.toFixed(1);
+        document.getElementById('factory-rebirth-mult').innerText = rebirthMult.toFixed(1);
+        document.getElementById('base-count').innerText = base.length;
+        renderBase();
+        renderInventory();
+        renderCollection();
+        updateLangText();
+    }
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        updateLangText();
+        saveGame();
+    }
+
+    function updateLangText() {
+        const t = langData[currentLang];
+        document.querySelectorAll('[data-lang]').forEach(el => {
+            const key = el.getAttribute('data-lang');
+            if(t[key]) el.innerText = t[key];
+        });
+    }
+
+    function setDrawCount(n) {
+        drawCount = n;
+        document.querySelectorAll('.count-btn').forEach(b => {
+            b.classList.remove('active');
+            if(parseInt(b.innerText.replace('x','')) === n) b.classList.add('active');
+        });
+    }
+
+    function buyPack(type) {
+        let costBase = 0;
+        if (type === 'normal') costBase = 10;
+        else if (type === 'rare') costBase = 500;
+        else if (type === 'epic') costBase = 1000;
+        else if (type === 'legendary') costBase = 5000;
+        else if (type === 'mythic') costBase = 50000;
+        else if (type === 'god') costBase = 2000000;
+        else if (type === 'secret') costBase = 50000000;
+        else if (type === 'og') costBase = 1000000000;
+        else if (type === 'luck_god') costBase = 500000;
+        else if (type === 'luck_secret') costBase = 100000000;
+
+        const totalCost = costBase * drawCount;
+
+        if(money < totalCost) {
+            alert("돈이 부족합니다! / Not enough money!");
+            return;
+        }
+
+        money -= totalCost;
+        updateUI();
+
+        const anim = document.getElementById('gacha-anim');
+        const box = document.querySelector('.gacha-box');
+        const resContainer = document.getElementById('gacha-results-container');
+        
+        anim.style.display = 'flex';
+        box.style.display = 'block';
+        resContainer.style.display = 'none';
+
+        setTimeout(() => {
+            box.style.display = 'none';
+            resContainer.style.display = 'flex';
+            showGachaResults(type, drawCount);
+        }, 1000);
+    }
+
+    function showGachaResults(type, count) {
+        const grid = document.getElementById('result-grid');
+        grid.innerHTML = '';
+        
+        for(let i=0; i<count; i++) {
+            const picked = processGacha(type);
+            const div = document.createElement('div');
+            div.className = 'result-card';
+            div.innerHTML = `
+                <img src="${picked.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${picked.rarity}" style="width:60px; height:60px;">
+                <div style="font-size:10px; margin-top:5px;">${picked.name}</div>
+            `;
+            grid.appendChild(div);
+        }
+        saveGame();
+        renderInventory();
+        renderCollection();
+    }
+
+    function closeGacha() {
+        document.getElementById('gacha-anim').style.display = 'none';
+        updateUI();
+    }
+
+    function pickWeighted(arr) {
+        if (!arr || arr.length === 0) return null;
+        let totalWeight = 0;
+        const weightedItems = arr.map(item => {
+            const weight = 1 / Math.max(1, item.val);
+            totalWeight += weight;
+            return { item, weight };
+        });
+        let random = Math.random() * totalWeight;
+        for (const entry of weightedItems) {
+            random -= entry.weight;
+            if (random <= 0) return entry.item;
+        }
+        return arr[arr.length - 1];
+    }
+
+    function pickWithRate(arr, rates) {
+        // rates: array of percent, e.g. [75.5, 12, 5, 1, remaining]
+        let rng = Math.random() * 100;
+        let acc = 0;
+        for(let i=0; i<arr.length; i++) {
+            acc += rates[i] || 0;
+            if(rng <= acc) return arr[i];
+        }
+        return arr[arr.length - 1];
     }
 
     function processGacha(type) {
-        const c=DB.filter(i=>i.rarity===1), r=DB.filter(i=>i.rarity===2), e=DB.filter(i=>i.rarity===3);
-        const l=DB.filter(i=>i.rarity===4), m=DB.filter(i=>i.rarity===5), g=DB.filter(i=>i.rarity===6);
-        let picked, rnd=Math.random();
+        const c=DB.filter(i=>i.rarity===1 && !i.isFusion && !i.isRitual), r=DB.filter(i=>i.rarity===2 && !i.isFusion && !i.isRitual), e=DB.filter(i=>i.rarity===3 && !i.isFusion && !i.isRitual);
+        const l=DB.filter(i=>i.rarity===4 && !i.isFusion && !i.isRitual), m=DB.filter(i=>i.rarity===5 && !i.isFusion && !i.isRitual), g=DB.filter(i=>i.rarity===6 && !i.isFusion && !i.isRitual && !i.isLuck && !i.isRitual);
+        const s=DB.filter(i=>i.rarity===8 && !i.isFusion && !i.isRitual && !i.isLuck), o=DB.filter(i=>i.rarity===9 && !i.isFusion && !i.isRitual);
+        
+        let picked;
+        const pick = pickWeighted; 
 
-        if(type==='god') picked = (rnd<0.1)? m[Math.floor(Math.random()*m.length)] : g[Math.floor(Math.random()*g.length)];
-        else if(type==='mythic') picked = (rnd<0.1)? l[Math.floor(Math.random()*l.length)] : m[Math.floor(Math.random()*m.length)];
-        else if(type==='legendary') picked = (rnd<0.1)? e[Math.floor(Math.random()*e.length)] : l[Math.floor(Math.random()*l.length)];
-        else if(type==='epic') picked = (rnd<0.1)? r[Math.floor(Math.random()*r.length)] : e[Math.floor(Math.random()*e.length)];
-        else if(type==='rare') picked = (rnd<0.2)? c[Math.floor(Math.random()*c.length)] : r[Math.floor(Math.random()*r.length)];
-        else picked = (rnd<0.9)? c[Math.floor(Math.random()*c.length)] : r[Math.floor(Math.random()*r.length)];
+        if (type === 'normal') {
+            if (rand(0.90)) picked = pick(c); else if (rand(0.99)) picked = pick(r); else picked = pick(e);
+        } 
+        else if (type === 'rare') {
+            if (rand(0.20)) picked = pick(c); else if (rand(0.90)) picked = pick(r); else picked = pick(e);
+        }
+        else if (type === 'epic') {
+            if (rand(0.10)) picked = pick(r); else if (rand(0.90)) picked = pick(e); else picked = pick(l);
+        }
+        else if (type === 'legendary') {
+            if (rand(0.10)) picked = pick(e); else if (rand(0.90)) picked = pick(l); else picked = pick(m);
+        }
+        else if (type === 'mythic') {
+            if (rand(0.10)) picked = pick(l); else picked = pick(m);
+        }
+        else if (type === 'god') {
+            if (rand(0.10)) picked = pick(m); else picked = pick(g);
+        }
+        else if (type === 'secret') {
+            if (rand(0.05)) picked = pick(g); else picked = pick(s);
+        }
+        else if (type === 'og') {
+            picked = pick(o);
+        }
+        else if (type === 'luck_god') {
+            // God Luck Block
+            const luckG = DB.filter(i => i.isLuck && i.rarity === 6);
+            picked = pickWeighted(luckG);
+        }
+        else if (type === 'luck_secret') {
+            // Secret Luck Block - Specific Rates
+            // ID 501: 75.5%, 502: 12%, 503: 5%, 504: 1%, 505: ~6.5%
+            const luckS = [501, 502, 503, 504, 505].map(id => DB.find(x => x.id === id));
+            const rates = [75.5, 12, 5, 1, 6.5];
+            picked = pickWithRate(luckS, rates);
+        }
+        
+        if (!picked) picked = pick(c);
+        if (!picked) picked = DB[0];
 
         if(!unlockedItems.includes(picked.id)) unlockedItems.push(picked.id);
-        const newItem={...picked, uid:uidCounter++, level:1, xp:0, maxXp:100};
-        inventory.push(newItem); updateUI();
+        const newItem = { ...picked, uid: uidCounter++, level: 1, xp: 0, maxXp: 100 };
+        inventory.push(newItem);
         return newItem;
     }
 
-    function openModal(id){document.getElementById(id).style.display='flex'; if(id==='collection-modal')renderCollection();}
-    function closeModal(id){document.getElementById(id).style.display='none'; if(id==='inventory-modal')closeActionMenu();}
-    function showLobby(){closeModal('inventory-modal');closeModal('battle-modal');closeModal('collection-modal');}
-    function toggleAuto(){autoActive=!autoActive; const b=document.getElementById('auto-btn'); if(autoActive){b.classList.add('auto-active');document.getElementById('auto-status').innerText='ON';}else{b.classList.remove('auto-active');document.getElementById('auto-status').innerText='OFF';}}
-    function setTheme(t){document.body.setAttribute('data-theme',t);closeModal('settings-modal');}
+    function rand(limit) { return Math.random() < limit; }
+
+    function setCollectionTab(tab) {
+        currentCollectionTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        renderCollection();
+    }
+
+    function renderCollection() {
+        const list = document.getElementById('collection-list');
+        list.innerHTML = '';
+        let sortedDB = [...DB].sort((a,b) => a.id - b.id);
+        
+        // Filter by tab
+        if(currentCollectionTab === 'standard') {
+            sortedDB = sortedDB.filter(i => !i.isFusion && !i.isRitual && !i.isLuck);
+        } else if(currentCollectionTab === 'fusion') {
+            sortedDB = sortedDB.filter(i => i.isFusion);
+        } else if(currentCollectionTab === 'ritual') {
+            sortedDB = sortedDB.filter(i => i.isRitual);
+        } else if(currentCollectionTab === 'luck') {
+            sortedDB = sortedDB.filter(i => i.isLuck);
+        }
+
+        sortedDB.forEach(d => {
+            const un = unlockedItems.includes(d.id);
+            const div = document.createElement('div');
+            div.className = `inv-item collection-item ${un ? '' : 'locked'}`;
+            div.innerHTML = `
+                <img src="${d.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${d.rarity}">
+                <div class="item-name" style="font-size:10px; text-align:center; width:100%; overflow:hidden; white-space:nowrap;">${un ? d.name : "???"}</div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function renderInventory() {
+        const list = document.getElementById('inventory-list');
+        list.innerHTML = '';
+        inventory.forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.className = 'inv-item';
+            div.onclick = () => selectItem(idx);
+            div.innerHTML = `
+                <span class="lvl-badge">Lv.${item.level}</span>
+                <img src="${item.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${item.rarity}">
+                <div style="font-size:10px; text-align:center; width:100%; overflow:hidden; white-space:nowrap;">${item.name}</div>
+            `;
+            list.appendChild(div);
+        });
+
+        // Factory Modal Check
+        if(document.getElementById('factory-modal').style.display === 'flex') {
+            const fList = document.getElementById('fusion-inventory-list');
+            fList.innerHTML = '';
+            inventory.forEach((item, idx) => {
+                if(fusionSlots.includes(item) || ritualSlots.includes(item)) return; 
+                const div = document.createElement('div');
+                div.className = 'inv-item';
+                // Click behavior depends on mode? No, just add to empty slot based on context?
+                // For simplicity, we can't easily distinguish intention.
+                // Let's make: Click -> Try Fusion -> If Fail Try Ritual.
+                div.onclick = () => {
+                     if(!addToFusionSlot(item)) {
+                         addToRitualSlot(item);
+                     }
+                };
+                div.innerHTML = `
+                    <span class="lvl-badge">Lv.${item.level}</span>
+                    <img src="${item.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${item.rarity}">
+                    <div style="font-size:10px; text-align:center; width:100%; overflow:hidden; white-space:nowrap;">${item.name}</div>
+                `;
+                fList.appendChild(div);
+            });
+        }
+    }
+
+    function renderBase() {
+        base.forEach((item, idx) => {
+            const slot = document.getElementById(`slot-${idx}`);
+            if(slot) slot.innerHTML = `<img src="${item.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${item.rarity}" onclick="unequip(${idx})">`;
+        });
+        for(let i = base.length; i < 50; i++) {
+            const slot = document.getElementById(`slot-${i}`);
+            if(slot) slot.innerHTML = '';
+        }
+    }
+
+    function selectItem(idx) {
+        selectedItemIdx = idx;
+        const i = inventory[idx];
+        if(!i) return; 
+        document.getElementById('selected-item-info').innerHTML = `
+            <div>${i.name} (Lv.${i.level})</div>
+            <div style="font-size:12px; color:#aaa;">+${(i.val * rebirthMult).toLocaleString()} $/s</div>
+        `;
+        document.getElementById('sell-price').innerText = (i.val * 5 * i.level).toLocaleString();
+        document.getElementById('item-action-menu').style.display = 'flex';
+    }
+
+    function closeActionMenu() {
+        document.getElementById('item-action-menu').style.display = 'none';
+        selectedItemIdx = -1;
+    }
+
+    function actionEquip() {
+        if(selectedItemIdx < 0) return;
+        if(base.length >= 50) { alert("Base is full! (Max 50)"); return; }
+        if(inventory[selectedItemIdx]) {
+            base.push(inventory.splice(selectedItemIdx, 1)[0]);
+            closeActionMenu();
+            updateUI();
+            saveGame();
+        }
+    }
+
+    function unequip(idx) {
+        if(base[idx]) {
+            inventory.push(base.splice(idx, 1)[0]);
+            updateUI();
+            saveGame();
+        }
+    }
+
+    function actionSell() {
+        if(selectedItemIdx < 0) return;
+        if(inventory[selectedItemIdx]) {
+            money += inventory[selectedItemIdx].val * 5 * inventory[selectedItemIdx].level;
+            inventory.splice(selectedItemIdx, 1);
+            closeActionMenu();
+            updateUI();
+            saveGame();
+        }
+    }
+
+    /* Fusion & Ritual UI */
+    function openFactoryModal() {
+        renderFusionSlots();
+        renderRitualSlots();
+        openModal('factory-modal');
+        renderInventory();
+        startFactoryLoop();
+    }
+
+    function addToFusionSlot(item) {
+        const emptyIdx = fusionSlots.indexOf(null);
+        if(emptyIdx !== -1) {
+            fusionSlots[emptyIdx] = item;
+            renderFusionSlots();
+            renderInventory(); 
+            return true;
+        } 
+        return false;
+    }
+    
+    function addToRitualSlot(item) {
+        const emptyIdx = ritualSlots.indexOf(null);
+        if(emptyIdx !== -1) {
+            ritualSlots[emptyIdx] = item;
+            renderRitualSlots();
+            renderInventory();
+            return true;
+        }
+        return false;
+    }
+
+    function removeFusionItem(slotIdx) {
+        if(fusionSlots[slotIdx]) {
+            fusionSlots[slotIdx] = null;
+            renderFusionSlots();
+            renderInventory();
+        }
+    }
+    
+    function removeRitualItem(slotIdx) {
+        if(ritualSlots[slotIdx]) {
+            ritualSlots[slotIdx] = null;
+            renderRitualSlots();
+            renderInventory();
+        }
+    }
+
+    function renderFusionSlots() {
+        let filledCount = 0;
+        for(let i=0; i<4; i++) {
+            const slotEl = document.getElementById(`f-slot-${i}`);
+            const item = fusionSlots[i];
+            if(item) {
+                slotEl.innerHTML = `<img src="${item.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${item.rarity}">`;
+                slotEl.classList.add('filled');
+                filledCount++;
+            } else {
+                slotEl.innerHTML = '';
+                slotEl.classList.remove('filled');
+            }
+        }
+        const btn = document.getElementById('btn-fuse-start');
+        btn.disabled = (filledCount !== 4);
+        btn.style.background = (filledCount === 4) ? '#e91e63' : '#333';
+        btn.style.color = (filledCount === 4) ? 'white' : '#555';
+    }
+
+    function renderRitualSlots() {
+        let filledCount = 0;
+        for(let i=0; i<3; i++) {
+            const slotEl = document.getElementById(`r-slot-${i}`);
+            const item = ritualSlots[i];
+            if(item) {
+                slotEl.innerHTML = `<img src="${item.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${item.rarity}">`;
+                slotEl.classList.add('filled');
+                filledCount++;
+            } else {
+                slotEl.innerHTML = '';
+                slotEl.classList.remove('filled');
+            }
+        }
+        const btn = document.getElementById('btn-ritual-start');
+        btn.disabled = (filledCount !== 3);
+        btn.style.background = (filledCount === 3) ? '#9c27b0' : '#333';
+        btn.style.color = (filledCount === 3) ? 'white' : '#555';
+    }
+
+    function startRitual() {
+        // Check if all are Bombardiro (ID 40)
+        const allCorrect = ritualSlots.every(i => i && i.id === 40);
+        if(!allCorrect) {
+            alert("의식 실패! '봄바르 디로 크로코 디로' 3마리가 필요합니다.");
+            return;
+        }
+
+        // Consume items
+        ritualSlots.forEach(rItem => {
+            const idx = inventory.findIndex(invItem => invItem.uid === rItem.uid);
+            if(idx !== -1) inventory.splice(idx, 1);
+        });
+
+        // Give Result: Los Crocodilitos (ID 300)
+        const resultItem = DB.find(x => x.id === 300);
+        if(!unlockedItems.includes(resultItem.id)) unlockedItems.push(resultItem.id);
+        const newItem = { ...resultItem, uid: uidCounter++, level: 1, xp: 0, maxXp: 100 };
+        inventory.push(newItem);
+        ritualSlots = [null, null, null];
+        renderRitualSlots();
+        
+        // Anim
+        const anim = document.getElementById('gacha-anim');
+        const box = document.querySelector('.gacha-box');
+        const resContainer = document.getElementById('gacha-results-container');
+        anim.style.display = 'flex';
+        box.style.display = 'block';
+        resContainer.style.display = 'none';
+
+        setTimeout(() => {
+            box.style.display = 'none';
+            resContainer.style.display = 'flex';
+            const grid = document.getElementById('result-grid');
+            grid.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = 'result-card';
+            div.innerHTML = `
+                <div style="color:#9c27b0; font-weight:bold; margin-bottom:5px;">RITUAL SUCCESS!</div>
+                <img src="${newItem.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${newItem.rarity}" style="width:80px; height:80px;">
+                <div style="font-size:12px; margin-top:5px;">${newItem.name}</div>
+            `;
+            grid.appendChild(div);
+        }, 1500);
+        saveGame();
+        updateUI();
+    }
+
+    function startFusion() {
+        if(fusionSlots.includes(null)) return;
+        let totalVal = 0;
+        fusionSlots.forEach(i => totalVal += i.val);
+        fusionSlots.forEach(fItem => {
+            const idx = inventory.findIndex(invItem => invItem.uid === fItem.uid);
+            if(idx !== -1) inventory.splice(idx, 1);
+        });
+
+        // Fusion Result Logic
+        const fLeg = DB.filter(i => i.isFusion && i.rarity === 4);
+        const fMyth = DB.filter(i => i.isFusion && i.rarity === 5);
+        const fGod = DB.filter(i => i.isFusion && i.rarity === 6);
+        const fSec = DB.filter(i => i.isFusion && i.rarity === 8);
+
+        let rng = Math.random();
+        let resultItem;
+
+        if (totalVal < 10000) {
+            if (rng < 0.90) resultItem = pickWeighted(fLeg); else resultItem = pickWeighted(fMyth);
+        } else if (totalVal < 100000) {
+            if (rng < 0.20) resultItem = pickWeighted(fLeg); 
+            else if (rng < 0.90) resultItem = pickWeighted(fMyth); 
+            else resultItem = pickWeighted(fGod);
+        } else if (totalVal < 5000000) {
+            if (rng < 0.10) resultItem = pickWeighted(fMyth); 
+            else if (rng < 0.90) resultItem = pickWeighted(fGod); 
+            else resultItem = pickWeighted(fSec);
+        } else {
+            if (rng < 0.40) resultItem = pickWeighted(fGod);
+            else resultItem = pickWeighted(fSec);
+        }
+
+        if (!resultItem) resultItem = fLeg[0] || DB[0];
+
+        if(!unlockedItems.includes(resultItem.id)) unlockedItems.push(resultItem.id);
+        const newItem = { ...resultItem, uid: uidCounter++, level: 1, xp: 0, maxXp: 100 };
+        inventory.push(newItem);
+        fusionSlots = [null, null, null, null];
+        renderFusionSlots();
+
+        const anim = document.getElementById('gacha-anim');
+        const box = document.querySelector('.gacha-box');
+        const resContainer = document.getElementById('gacha-results-container');
+        anim.style.display = 'flex';
+        box.style.display = 'block';
+        resContainer.style.display = 'none';
+
+        setTimeout(() => {
+            box.style.display = 'none';
+            resContainer.style.display = 'flex';
+            const grid = document.getElementById('result-grid');
+            grid.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = 'result-card';
+            div.innerHTML = `
+                <div style="color:#e91e63; font-weight:bold; margin-bottom:5px;">FUSION SUCCESS!</div>
+                <img src="${newItem.img}" onerror="this.src='https://placehold.co/100?text=Error'; this.onerror=null;" class="item-img rarity-${newItem.rarity}" style="width:80px; height:80px;">
+                <div style="font-size:12px; margin-top:5px;">${newItem.name}</div>
+            `;
+            grid.appendChild(div);
+        }, 1500);
+        saveGame();
+        updateUI();
+    }
+
+    /* Factory Roaming Logic */
+    function startFactoryLoop() {
+        if(factoryMobInterval) clearInterval(factoryMobInterval);
+        
+        // Spawn every 3 seconds
+        factoryMobInterval = setInterval(() => {
+            if(document.getElementById('factory-modal').style.display === 'flex') {
+                spawnFactoryMob();
+            }
+        }, 3000);
+    }
+
+    function spawnFactoryMob() {
+        if(currentFactoryMob) {
+            clearTimeout(factoryDespawnTimeout);
+            if(currentFactoryMob.el && currentFactoryMob.el.parentNode) currentFactoryMob.el.parentNode.removeChild(currentFactoryMob.el);
+            currentFactoryMob = null;
+        }
+
+        const mob = pickWeighted(DB.filter(i => !i.isFusion && !i.isRitual && !i.isLuck));
+        if(!mob) return;
+
+        const container = document.getElementById('factory-mob-container');
+        const mobEl = document.createElement('img');
+        mobEl.src = mob.img;
+        mobEl.onerror = function() { this.src='https://placehold.co/100?text=Mob'; this.onerror=null; };
+        mobEl.className = 'factory-mob rarity-' + mob.rarity;
+        
+        mobEl.style.left = (10 + Math.random() * 80) + '%';
+        
+        mobEl.onclick = () => {
+            battleFactoryMob(mob);
+            clearTimeout(factoryDespawnTimeout);
+            container.removeChild(mobEl);
+            currentFactoryMob = null;
+        };
+
+        container.appendChild(mobEl);
+        currentFactoryMob = { item: mob, el: mobEl };
+
+        factoryDespawnTimeout = setTimeout(() => {
+            if(currentFactoryMob && currentFactoryMob.el === mobEl) {
+                container.removeChild(mobEl);
+                currentFactoryMob = null;
+            }
+        }, 5000);
+    }
+
+    function battleFactoryMob(mob) {
+        if(inventory.length === 0) {
+            alert("싸울 캐릭터가 없습니다! 인벤토리를 확인하세요.");
+            return;
+        }
+        const fighter = inventory.reduce((prev, current) => (prev.val > current.val) ? prev : current);
+        
+        openModal('battle-modal');
+        document.getElementById('battle-lobby').style.display = 'none';
+        document.getElementById('battle-view').style.display = 'flex';
+        
+        const pImg = document.getElementById('battle-player');
+        pImg.src = fighter.img;
+        pImg.onerror = function() { this.src='https://placehold.co/100?text=Player'; this.onerror=null; };
+        pImg.className = `fighter player rarity-${fighter.rarity}`;
+        
+        const eImg = document.getElementById('battle-enemy');
+        eImg.src = mob.img;
+        eImg.onerror = function() { this.src='https://placehold.co/100?text=Enemy'; this.onerror=null; };
+        eImg.className = `fighter enemy rarity-${mob.rarity}`;
+        
+        let ehp = mob.val * 0.5;
+        if(ehp < 100) ehp = 100;
+        const maxHp = ehp;
+        
+        document.getElementById('battle-msg').innerText = "WILD BRAINROT!";
+        
+        if(battleTimer) clearInterval(battleTimer);
+        battleTimer = setInterval(() => {
+            ehp -= fighter.val * fighter.level * rebirthMult + 10;
+            let pct = (ehp / maxHp) * 100;
+            if(pct < 0) pct = 0;
+            document.getElementById('enemy-hp').style.width = pct + '%';
+            
+            if(ehp <= 0) {
+                clearInterval(battleTimer);
+                winFactoryBattle(fighter, mob);
+            }
+        }, 100);
+    }
+
+    function winFactoryBattle(fighter, mob) {
+        let chance = 1 / (Math.sqrt(mob.val) / 2);
+        if(chance > 0.5) chance = 0.5; 
+        
+        const rng = Math.random();
+        
+        if(rng < chance) {
+            document.getElementById('battle-msg').innerText = "CAUGHT!";
+            document.getElementById('battle-msg').style.color = "#00ff00";
+            
+            if(!unlockedItems.includes(mob.id)) unlockedItems.push(mob.id);
+            const newItem = { ...mob, uid: uidCounter++, level: 1, xp: 0, maxXp: 100 };
+            inventory.push(newItem);
+            
+            setTimeout(() => {
+                alert(`획득 성공!\n${mob.name}`);
+                closeModal('battle-modal');
+                updateUI();
+            }, 1000);
+        } else {
+            document.getElementById('battle-msg').innerText = "ESCAPED...";
+            document.getElementById('battle-msg').style.color = "#fff";
+            setTimeout(() => {
+                closeModal('battle-modal');
+            }, 1000);
+        }
+        
+        fighter.xp += 10;
+        saveGame();
+    }
+
+    /* Normal Battle Logic */
+    function actionBattleStart() {
+        if(selectedItemIdx < 0) return;
+        const item = inventory[selectedItemIdx];
+        if(!item) return;
+
+        closeActionMenu();
+        closeModal('inventory-modal');
+        openModal('battle-modal');
+        
+        document.getElementById('battle-lobby').style.display = 'none';
+        document.getElementById('battle-view').style.display = 'flex';
+        
+        const pImg = document.getElementById('battle-player');
+        pImg.src = item.img;
+        pImg.onerror = function() { this.src='https://placehold.co/100?text=Player'; this.onerror=null; };
+        pImg.className = `fighter player rarity-${item.rarity}`;
+        
+        const enemy = DB[Math.floor(Math.random() * DB.length)];
+        const eImg = document.getElementById('battle-enemy');
+        eImg.src = enemy.img;
+        eImg.onerror = function() { this.src='https://placehold.co/100?text=Enemy'; this.onerror=null; };
+        eImg.className = `fighter enemy rarity-${enemy.rarity}`;
+        
+        let ehp = item.level * 50 + 100;
+        const maxHp = ehp;
+        document.getElementById('battle-msg').innerText = "FIGHTING...";
+        document.getElementById('battle-msg').style.color = "#f44336";
+        
+        if(battleTimer) clearInterval(battleTimer);
+        battleTimer = setInterval(() => {
+            ehp -= item.val * item.level * rebirthMult + Math.random() * 10;
+            let pct = (ehp / maxHp) * 100;
+            if(pct < 0) pct = 0;
+            document.getElementById('enemy-hp').style.width = pct + '%';
+            
+            if(ehp <= 0) {
+                clearInterval(battleTimer);
+                winBattle(item);
+            }
+        }, 100);
+    }
+
+    function winBattle(pet) {
+        document.getElementById('battle-msg').innerText = "WIN! XP UP!";
+        pet.xp += 50 + pet.level * 10;
+        if(pet.xp >= pet.maxXp) {
+            pet.level++;
+            pet.xp = 0;
+            pet.maxXp = Math.floor(pet.maxXp * 1.5);
+        }
+        saveGame();
+        setTimeout(() => {
+            updateUI();
+            openModal('inventory-modal');
+            closeModal('battle-modal');
+        }, 1000);
+    }
+
+    function openModal(id) { 
+        document.getElementById(id).style.display = 'flex';
+        if(id === 'collection-modal') renderCollection();
+        if(id === 'inventory-modal') closeActionMenu();
+        if(id === 'factory-modal') {
+            startFactoryLoop(); 
+            renderInventory(); 
+        }
+    }
+    function closeModal(id) { 
+        document.getElementById(id).style.display = 'none'; 
+        if(id === 'inventory-modal') closeActionMenu();
+        if(id === 'battle-modal' && battleTimer) clearInterval(battleTimer);
+        if(id === 'factory-modal') {
+             if(factoryMobInterval) clearInterval(factoryMobInterval);
+        }
+    }
+
 </script>
 </body>
 </html>
